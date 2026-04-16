@@ -2,12 +2,12 @@ import SwiftUI
 
 @main
 struct CcsplitApp: App {
+    @StateObject private var state = AppState()
+
     var body: some Scene {
         MenuBarExtra("ccsplit", systemImage: "bubble.left.and.bubble.right") {
-            Text("ccsplit (skeleton)")
-            Divider()
-            Button("Quit") { NSApp.terminate(nil) }
-                .keyboardShortcut("q")
+            MenuBarView(state: state)
+                .task { state.bootstrap() }
         }
         .menuBarExtraStyle(.window)
     }
