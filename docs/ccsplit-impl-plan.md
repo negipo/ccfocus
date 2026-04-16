@@ -2840,7 +2840,7 @@ Files:
 - Modify: `ccsplit-app/ccsplit-app/SessionRegistry.swift` (deceased遷移の口)
 - Create: `ccsplit-app/ccsplit-appTests/LivenessCheckerTests.swift`
 
-- [ ] Step 1: テスト (PID3点チェックの純ロジック部)
+- [x] Step 1: テスト (PID3点チェックの純ロジック部)
 
 ```swift
 import XCTest
@@ -2863,7 +2863,7 @@ final class LivenessCheckerTests: XCTestCase {
 }
 ```
 
-- [ ] Step 2: 実装
+- [x] Step 2: 実装
 
 ```swift
 import Foundation
@@ -2918,7 +2918,7 @@ enum LivenessChecker {
 }
 ```
 
-- [ ] Step 3: AppStateに10秒タイマーを追加
+- [x] Step 3: AppStateに10秒タイマーを追加
 
 ```swift
 // AppState.swift 抜粋
@@ -2991,7 +2991,7 @@ extension SessionRegistry {
 
 `SessionEntry` に `deceasedReason: DeceasedReason?` を足す。
 
-- [ ] Step 4: テスト通過
+- [x] Step 4: テスト通過
 
 Run: `xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-app -only-testing:ccsplit-appTests/LivenessCheckerTests test`
 Expected: 3 passed

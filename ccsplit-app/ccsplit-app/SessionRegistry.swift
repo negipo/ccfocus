@@ -1,5 +1,7 @@
 import Foundation
 
+enum DeceasedReason { case claudeTerminated; case paneClosed; case timeout }
+
 struct SessionEntry {
     let sessionId: String
     var terminalId: String?
@@ -11,6 +13,7 @@ struct SessionEntry {
     var status: SessionStatus
     var lastEventTs: String
     var lastMessage: String?
+    var deceasedReason: DeceasedReason?
     var startedAt: String
 }
 
@@ -31,6 +34,7 @@ struct SessionRegistry {
                 status: .running,
                 lastEventTs: ev.ts,
                 lastMessage: nil,
+                deceasedReason: nil,
                 startedAt: ev.ts
             )
             sessions[s.sessionId] = entry
@@ -58,7 +62,7 @@ struct SessionRegistry {
         }
     }
 
-    private mutating func mutate(_ sid: String, _ f: (inout SessionEntry) -> Void) {
+    mutating func mutate(_ sid: String, _ f: (inout SessionEntry) -> Void) {
         guard var e = sessions[sid] else { return }
         f(&e)
         sessions[sid] = e
@@ -66,5 +70,29 @@ struct SessionRegistry {
 
     func sortedByLastEventDesc() -> [SessionEntry] {
         sessions.values.sorted { $0.lastEventTs > $1.lastEventTs }
+    }
+}
+
+extension SessionRegistry {
+    mutating func markDeceased(sid: String, reason: DeceasedReason) {
+        mutate(sid) { e in
+            e.status = .deceased
+            e.deceasedReason = reason
+        }
+    }
+
+    mutating func applyStaleAfter(_ now: Date) {
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        for (sid, e) in sessions {
+            guard let d = fmt.date(from: e.lastEventTs) else { continue }
+            let age = now.timeIntervalSince(d)
+            if e.status == .running || e.status == .waitingInput || e.status == .done {
+                if age >= 30 * 60 { mutate(sid) { $0.status = .stale } }
+            }
+            if e.status == .stale && e.claudePid == nil && age >= 2.5 * 3600 {
+                mutate(sid) { $0.status = .deceased; $0.deceasedReason = .timeout }
+            }
+        }
     }
 }
