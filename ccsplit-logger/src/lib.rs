@@ -1,5 +1,6 @@
 pub mod claude_proc;
 pub mod cli;
+pub mod commands;
 pub mod detach;
 pub mod event;
 pub mod ghostty;
