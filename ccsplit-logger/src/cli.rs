@@ -5,11 +5,11 @@ use clap::{Parser, Subcommand};
 #[command(name = "ccsplit-logger", version, about = "Claude Code hook logger for Ghostty pane tracking")]
 pub struct Cli {
     #[command(subcommand)]
-    command: Command,
+    pub command: Command,
 }
 
 #[derive(Subcommand)]
-enum Command {
+pub enum Command {
     SessionStart,
     Notification,
     Stop,
@@ -18,6 +18,17 @@ enum Command {
 }
 
 impl Cli {
+    pub fn needs_detach(&self) -> bool {
+        matches!(
+            self.command,
+            Command::SessionStart
+                | Command::Notification
+                | Command::Stop
+                | Command::PreToolUse
+                | Command::UserPromptSubmit
+        )
+    }
+
     pub fn run(self) -> Result<()> {
         match self.command {
             Command::SessionStart => Ok(()),
