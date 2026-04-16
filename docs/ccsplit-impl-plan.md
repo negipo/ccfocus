@@ -2996,12 +2996,12 @@ extension SessionRegistry {
 Run: `xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-app -only-testing:ccsplit-appTests/LivenessCheckerTests test`
 Expected: 3 passed
 
-- [ ] Step 5: 手動確認
+- [x] Step 5: 手動確認
 
 - `claude` を起動 → `/exit` で終了 → 10秒以内にメニューバーで該当行が deceased (取り消し線) に
 - Ghostty paneごと閉じる → 10秒以内に deceased
 
-- [ ] Step 6: コミット
+- [x] Step 6: コミット
 
 メッセージ例: `feat(app): add PID 3-point liveness check with 10s cadence`
 
