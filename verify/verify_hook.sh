@@ -1,6 +1,6 @@
 #!/bin/bash
 STAMP="$(date +%Y%m%dT%H%M%S)"
-OUT_DIR="$HOME/.ccsplit-verify"
+OUT_DIR="/tmp/ccsplit-verify"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/hook_$STAMP.txt"
 
@@ -23,7 +23,16 @@ PAYLOAD=$(\cat)
   done
   echo "--- env.GHOSTTY_SURFACE_ID=$GHOSTTY_SURFACE_ID ---"
   echo "--- env.TERM_PROGRAM=$TERM_PROGRAM ---"
-  echo "--- osascript Ghostty terminal dump ---"
+  echo "--- osascript Ghostty terminal dump (immediate) ---"
+  osascript "$(dirname "$0")/verify_ghostty.applescript" 2>&1 || echo "osascript failed"
+  echo "--- osascript Ghostty dump (after 100ms) ---"
+  sleep 0.1
+  osascript "$(dirname "$0")/verify_ghostty.applescript" 2>&1 || echo "osascript failed"
+  echo "--- osascript Ghostty dump (after 500ms) ---"
+  sleep 0.4
+  osascript "$(dirname "$0")/verify_ghostty.applescript" 2>&1 || echo "osascript failed"
+  echo "--- osascript Ghostty dump (after 1500ms) ---"
+  sleep 1.0
   osascript "$(dirname "$0")/verify_ghostty.applescript" 2>&1 || echo "osascript failed"
 } > "$OUT"
 
