@@ -1,3 +1,4 @@
+pub mod claude_proc;
 pub mod cli;
 pub mod detach;
 pub mod event;

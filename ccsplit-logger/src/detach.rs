@@ -1,3 +1,5 @@
+use crate::claude_proc::find_claude_proc;
+use crate::git::RealRunner;
 use anyhow::Result;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
@@ -18,13 +20,21 @@ pub fn detach_and_exit_parent() -> Result<()> {
 
     let exe = std::env::current_exe()?;
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let mut child = Command::new(exe)
-        .args(&args)
+    let mut cmd = Command::new(exe);
+    cmd.args(&args)
         .env(CHILD_ENV, "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()?;
+        .stderr(Stdio::null());
+
+    let ppid = parent_pid();
+    if let Some(info) = find_claude_proc(&RealRunner, ppid, 5) {
+        cmd.env("CCSPLIT_CLAUDE_PID", info.pid.to_string())
+            .env("CCSPLIT_CLAUDE_START", &info.lstart)
+            .env("CCSPLIT_CLAUDE_COMM", &info.comm);
+    }
+
+    let mut child = cmd.spawn()?;
     if let Some(mut stdin) = child.stdin.take() {
         stdin.write_all(&payload)?;
     }
@@ -39,4 +49,12 @@ pub fn become_session_leader() {
     unsafe {
         let _ = setsid();
     }
+}
+
+#[cfg(unix)]
+fn parent_pid() -> u32 {
+    extern "C" {
+        fn getppid() -> i32;
+    }
+    unsafe { getppid() as u32 }
 }
