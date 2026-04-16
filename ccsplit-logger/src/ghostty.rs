@@ -72,9 +72,17 @@ pub fn parse_ghostty_dump(s: &str) -> Vec<Term> {
 }
 
 pub fn pick_match(terms: &[Term], cwd: &str) -> MatchResult {
+    let canonical_cwd = std::fs::canonicalize(cwd)
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|_| cwd.to_string());
     let cands: Vec<&Term> = terms
         .iter()
-        .filter(|t| t.wd == cwd && t.name.contains("Claude Code"))
+        .filter(|t| {
+            let canonical_wd = std::fs::canonicalize(&t.wd)
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| t.wd.clone());
+            canonical_wd == canonical_cwd && t.name.contains("Claude Code")
+        })
         .collect();
     match cands.len() {
         0 => MatchResult::None,

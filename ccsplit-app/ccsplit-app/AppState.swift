@@ -25,10 +25,13 @@ final class AppState: ObservableObject {
     }
 
     private func startWatching() {
+        watcher?.stop()
         let dir = EventLogReader.eventsDir().path
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         watcher = LogTail.Watcher(directory: dir) { [weak self] in
-            self?.onFsEvent()
+            MainActor.assumeIsolated {
+                self?.onFsEvent()
+            }
         }
         watcher?.start()
     }

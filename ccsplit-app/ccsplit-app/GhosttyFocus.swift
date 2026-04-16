@@ -17,9 +17,9 @@ enum GhosttyFocus {
             end repeat
         end tell
         """
-        var error: NSDictionary?
-        if let script = NSAppleScript(source: source) {
-            _ = script.executeAndReturnError(&error)
-        }
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", source]
+        try? proc.run()
     }
 }

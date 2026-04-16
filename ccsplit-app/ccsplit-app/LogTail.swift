@@ -39,6 +39,10 @@ enum LogTail {
             self.onChange = onChange
         }
 
+        deinit {
+            stop()
+        }
+
         func start() {
             startFSEvents()
             startPollingFallback()
