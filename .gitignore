@@ -3,5 +3,6 @@ target/
 .build/
 .swiftpm/
 DerivedData/
+*.xcodeproj
 *.xcuserstate
 .DS_Store
