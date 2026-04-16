@@ -1,3 +1,4 @@
+use crate::commands;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -31,11 +32,11 @@ impl Cli {
 
     pub fn run(self) -> Result<()> {
         match self.command {
-            Command::SessionStart => Ok(()),
-            Command::Notification => Ok(()),
-            Command::Stop => Ok(()),
-            Command::PreToolUse => Ok(()),
-            Command::UserPromptSubmit => Ok(()),
+            Command::SessionStart => commands::session_start::run(),
+            Command::Notification => commands::notification::run(),
+            Command::Stop => commands::stop::run(),
+            Command::PreToolUse => commands::pre_tool_use::run(),
+            Command::UserPromptSubmit => commands::user_prompt_submit::run(),
         }
     }
 }
