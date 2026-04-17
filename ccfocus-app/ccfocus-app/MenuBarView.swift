@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var state: AppState
     var onDismiss: () -> Void = {}
+    var onOpenSettings: () -> Void = {}
     @State private var showDeceased = false
 
     private var activeSessions: [SessionEntry] {
@@ -56,6 +57,18 @@ struct MenuBarView: View {
                     }
                     .frame(height: height)
                 }
+            }
+            Divider()
+            HStack {
+                Color.clear.frame(width: 10, height: 10)
+                Text("Settings").foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(4)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onDismiss()
+                onOpenSettings()
             }
             Divider()
             HStack {
