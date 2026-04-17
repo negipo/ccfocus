@@ -102,6 +102,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func showPopoverUnfocused() {
         guard let button = statusItem.button else { return }
         if !popover.isShown {
+            if let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
+                hostingView.wantsKeyboardFocus = false
+            }
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             observeKeyWindowNotifications()
             stateMachine.markOpenedUnfocused()
@@ -111,7 +114,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func focusPopover() {
         NSApp.activate(ignoringOtherApps: true)
         if let window = popover.contentViewController?.view.window,
-           let hostingView = popover.contentViewController?.view {
+           let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
+            hostingView.wantsKeyboardFocus = true
             window.makeKeyAndOrderFront(nil)
             window.makeFirstResponder(hostingView)
         }
@@ -153,6 +157,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
+        if let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
+            hostingView.wantsKeyboardFocus = false
+        }
         stateMachine.markDidClose()
     }
 
