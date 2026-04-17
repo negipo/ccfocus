@@ -24,6 +24,11 @@ final class AppState: ObservableObject {
         }
     }
 
+    func clearMessage(_ sessionId: String) {
+        registry.clearMessage(sessionId)
+        objectWillChange.send()
+    }
+
     func setManualPairing(sessionId: String, terminalId: String) {
         pairings.set(sessionId: sessionId, terminalId: terminalId)
         try? pairings.save()

@@ -30,6 +30,18 @@ final class SessionRegistryTests: XCTestCase {
         XCTAssertEqual(reg.sessions["s1"]?.lastMessage, "Approve bash")
     }
 
+    func testNewSessionStartRetiresSamePidSession() throws {
+        let events = try parse([
+            #"{"ts":"2026-04-16T09:00:00.000Z","event":"session_start","session_id":"s1","terminal_id":"T1","cwd":"/a","git_branch":"main","claude_pid":100,"claude_start_time":"Thu Apr 16 20:22:22 2026","claude_comm":"claude"}"#,
+            #"{"ts":"2026-04-16T09:01:00.000Z","event":"notification","session_id":"s1","message":"waiting"}"#,
+            #"{"ts":"2026-04-16T09:05:00.000Z","event":"session_start","session_id":"s2","terminal_id":"T1","cwd":"/a","git_branch":"main","claude_pid":100,"claude_start_time":"Thu Apr 16 20:22:22 2026","claude_comm":"claude"}"#
+        ])
+        var reg = SessionRegistry()
+        for e in events { reg.apply(e) }
+        XCTAssertEqual(reg.sessions["s1"]?.status, .deceased)
+        XCTAssertEqual(reg.sessions["s2"]?.status, .running)
+    }
+
     func testSortedByLastEventDesc() throws {
         let events = try parse([
             #"{"ts":"2026-04-16T09:00:00.000Z","event":"session_start","session_id":"s1","terminal_id":"T1","cwd":"/a","git_branch":null,"claude_pid":null,"claude_start_time":null,"claude_comm":null}"#,

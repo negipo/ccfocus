@@ -24,6 +24,13 @@ struct SessionRegistry {
     mutating func apply(_ ev: Event) {
         switch ev.kind {
         case .sessionStart(let s):
+            if let pid = s.claudePid, let st = s.claudeStartTime {
+                for (oldSid, old) in sessions where oldSid != s.sessionId
+                    && old.claudePid == pid && old.claudeStartTime == st
+                    && old.status != .deceased {
+                    mutate(oldSid) { $0.status = .deceased; $0.deceasedReason = .claudeTerminated }
+                }
+            }
             let entry = SessionEntry(
                 sessionId: s.sessionId,
                 terminalId: s.terminalId,
@@ -61,6 +68,10 @@ struct SessionRegistry {
                 e.lastEventTs = ev.ts
             }
         }
+    }
+
+    mutating func clearMessage(_ sid: String) {
+        mutate(sid) { $0.lastMessage = nil }
     }
 
     mutating func mutate(_ sid: String, _ f: (inout SessionEntry) -> Void) {

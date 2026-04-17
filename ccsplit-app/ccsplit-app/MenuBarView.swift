@@ -78,6 +78,7 @@ struct MenuBarView: View {
         .background(s.status == .waitingInput ? Color.orange.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {
+            state.clearMessage(s.sessionId)
             if let id = state.effectiveTerminalId(for: s) {
                 GhosttyFocus.focus(terminalId: id)
                 onDismiss()
