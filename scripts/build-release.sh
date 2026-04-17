@@ -2,24 +2,24 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-cargo build -p ccsplit-logger --release
+cargo build -p ccfocus-logger --release
 
-xcodegen generate --spec ccsplit-app/project.yml --project ccsplit-app/
+xcodegen generate --spec ccfocus-app/project.yml --project ccfocus-app/
 
 xcodebuild \
-  -project ccsplit-app/ccsplit-app.xcodeproj \
-  -scheme ccsplit-app \
+  -project ccfocus-app/ccfocus-app.xcodeproj \
+  -scheme ccfocus-app \
   -configuration Release \
   -derivedDataPath build/xcode \
   build
 
-APP_PATH="build/xcode/Build/Products/Release/ccsplit-app.app"
+APP_PATH="build/xcode/Build/Products/Release/ccfocus-app.app"
 test -d "$APP_PATH" || { echo "app bundle not found: $APP_PATH"; exit 1; }
 
 mkdir -p dist
-cp target/release/ccsplit-logger dist/ccsplit-logger
-rm -rf dist/ccsplit-app.app
+cp target/release/ccfocus-logger dist/ccfocus-logger
+rm -rf dist/ccfocus-app.app
 cp -R "$APP_PATH" dist/
 
-echo "logger: dist/ccsplit-logger"
-echo "app bundle: dist/ccsplit-app.app"
+echo "logger: dist/ccfocus-logger"
+echo "app bundle: dist/ccfocus-app.app"

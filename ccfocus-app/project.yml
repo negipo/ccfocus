@@ -1,0 +1,34 @@
+name: ccfocus-app
+options:
+  bundleIdPrefix: com.negipo
+  deploymentTarget:
+    macOS: "13.0"
+targets:
+  ccfocus-app:
+    type: application
+    platform: macOS
+    sources:
+      - path: ccfocus-app
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.negipo.ccfocus-app
+        INFOPLIST_FILE: ccfocus-app/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ccfocus-app/ccfocus_app.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        PRODUCT_NAME: ccfocus-app
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        SWIFT_VERSION: "5.9"
+  ccfocus-appTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: ccfocus-appTests
+    dependencies:
+      - target: ccfocus-app
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ccfocus-app.app/Contents/MacOS/ccfocus-app"
+        GENERATE_INFOPLIST_FILE: "YES"

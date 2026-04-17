@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["ccsplit-logger"]
+members = ["ccfocus-logger"]
 
 [workspace.package]
 edition = "2021"

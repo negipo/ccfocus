@@ -1,6 +1,6 @@
 #!/bin/bash
 STAMP="$(date +%Y%m%dT%H%M%S)"
-OUT_DIR="/tmp/ccsplit-verify"
+OUT_DIR="/tmp/ccfocus-verify"
 mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/hook_$STAMP.txt"
 
