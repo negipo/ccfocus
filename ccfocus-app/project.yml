@@ -3,12 +3,18 @@ options:
   bundleIdPrefix: com.negipo
   deploymentTarget:
     macOS: "13.0"
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
 targets:
   ccfocus-app:
     type: application
     platform: macOS
     sources:
       - path: ccfocus-app
+    dependencies:
+      - package: KeyboardShortcuts
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.negipo.ccfocus-app
