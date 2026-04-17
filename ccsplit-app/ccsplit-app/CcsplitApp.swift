@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
@@ -21,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = AppState()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        registerLoginItemIfNeeded()
         state.bootstrap()
         state.onOpenPopover = { [weak self] in self?.showPopover() }
 
@@ -51,5 +53,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPopover() {
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    private func registerLoginItemIfNeeded() {
+        let key = "loginItemRegistered"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let service = SMAppService.mainApp
+        if service.status != .enabled {
+            try? service.register()
+        }
+        UserDefaults.standard.set(true, forKey: key)
     }
 }
