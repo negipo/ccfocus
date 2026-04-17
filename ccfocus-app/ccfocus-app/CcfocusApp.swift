@@ -80,8 +80,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         guard let button = statusItem.button else { return }
         if !popover.isShown {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            stateMachine.markOpenedUnfocused()
             observeKeyWindowNotifications()
+            stateMachine.markOpenedUnfocused()
         }
     }
 
