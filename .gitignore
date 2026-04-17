@@ -1,0 +1,10 @@
+tmp/
+target/
+build/
+dist/
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj
+*.xcuserstate
+.DS_Store
