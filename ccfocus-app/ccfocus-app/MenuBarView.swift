@@ -107,8 +107,16 @@ struct MenuBarView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                Text((s.cwd as NSString).lastPathComponent).fontWeight(s.status == .waitingInput ? .semibold : .regular)
-                if let b = s.gitBranch { Text("[\(b)]").foregroundStyle(.secondary) }
+                Text((s.cwd as NSString).lastPathComponent)
+                    .fontWeight(s.status == .waitingInput ? .semibold : .regular)
+                    .lineLimit(1)
+                if let b = s.gitBranch {
+                    Text("[\(b)]")
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .layoutPriority(-1)
+                }
                 Spacer()
                 Text(relativeAge(s.lastEventTs)).foregroundStyle(.secondary)
                 if let numberHint {
