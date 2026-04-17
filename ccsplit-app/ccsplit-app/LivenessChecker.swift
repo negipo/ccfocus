@@ -26,6 +26,13 @@ enum LivenessChecker {
         return PsInfo(pid: pid, lstart: lstart, comm: comm)
     }
 
+    static func cleanupPairings(store: inout ManualPairingsStore, liveTerminals: Set<String>) -> Bool {
+        let stale = Set(store.map.values).subtracting(liveTerminals)
+        if stale.isEmpty { return false }
+        store.removePairingsReferring(terminalIds: stale)
+        return true
+    }
+
     static func ghosttyTerminalIds() -> Set<String> {
         let source = """
         tell application "Ghostty"

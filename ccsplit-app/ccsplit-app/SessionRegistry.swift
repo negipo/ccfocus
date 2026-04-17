@@ -2,7 +2,8 @@ import Foundation
 
 enum DeceasedReason { case claudeTerminated; case paneClosed; case timeout }
 
-struct SessionEntry {
+struct SessionEntry: Identifiable {
+    var id: String { sessionId }
     let sessionId: String
     var terminalId: String?
     var cwd: String

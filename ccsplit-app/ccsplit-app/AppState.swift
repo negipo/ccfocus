@@ -5,15 +5,32 @@ import UserNotifications
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var registry = SessionRegistry()
+    @Published private(set) var pairings = ManualPairingsStore(fileURL: ManualPairingsStore.defaultURL())
+    @Published var manualPairingSession: SessionEntry?
     private let reader = LogTail.Reader()
     private var watcher: LogTail.Watcher?
     private var livenessTimer: Timer?
 
     func bootstrap() {
+        try? pairings.load()
         replayAllJsonl()
         startWatching()
         startLivenessTimer()
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    func setManualPairing(sessionId: String, terminalId: String) {
+        pairings.set(sessionId: sessionId, terminalId: terminalId)
+        try? pairings.save()
+        objectWillChange.send()
+    }
+
+    func effectiveTerminalId(for entry: SessionEntry) -> String? {
+        entry.terminalId ?? pairings.get(sessionId: entry.sessionId)
+    }
+
+    func presentManualPair(for entry: SessionEntry) {
+        manualPairingSession = entry
     }
 
     private func replayAllJsonl() {
@@ -94,6 +111,9 @@ final class AppState: ObservableObject {
             }
         }
         registry.applyStaleAfter(Date())
+        if LivenessChecker.cleanupPairings(store: &pairings, liveTerminals: terms) {
+            try? pairings.save()
+        }
         objectWillChange.send()
     }
 }

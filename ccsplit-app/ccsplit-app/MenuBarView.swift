@@ -17,10 +17,32 @@ struct MenuBarView: View {
         }
         .padding(8)
         .frame(minWidth: 320)
+        .sheet(item: $state.manualPairingSession) { entry in
+            ManualPairView(
+                sessionId: entry.sessionId,
+                cwd: entry.cwd,
+                candidates: GhosttyFocus.listTerminals()
+            ) { terminalId in
+                state.setManualPairing(sessionId: entry.sessionId, terminalId: terminalId)
+                state.manualPairingSession = nil
+            }
+        }
     }
 
     private func row(_ s: SessionEntry) -> some View {
         VStack(alignment: .leading, spacing: 2) {
+            if state.effectiveTerminalId(for: s) == nil {
+                Button {
+                    state.presentManualPair(for: s)
+                } label: {
+                    HStack {
+                        Image(systemName: "link.badge.plus")
+                        Text("未紐付け: \((s.cwd as NSString).lastPathComponent)")
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+            }
             HStack {
                 Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
                 Text((s.cwd as NSString).lastPathComponent).fontWeight(s.status == .waitingInput ? .semibold : .regular)
@@ -36,7 +58,7 @@ struct MenuBarView: View {
         .background(s.status == .waitingInput ? Color.orange.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {
-            if let id = s.terminalId { GhosttyFocus.focus(terminalId: id) }
+            if let id = state.effectiveTerminalId(for: s) { GhosttyFocus.focus(terminalId: id) }
         }
     }
 
