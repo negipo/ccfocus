@@ -20,15 +20,20 @@ struct MenuBarView: View {
     }
 
     private func row(_ s: SessionEntry) -> some View {
-        HStack {
-            Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
-            Text((s.cwd as NSString).lastPathComponent)
-            if let b = s.gitBranch {
-                Text("[\(b)]").foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
+                Text((s.cwd as NSString).lastPathComponent).fontWeight(s.status == .waitingInput ? .semibold : .regular)
+                if let b = s.gitBranch { Text("[\(b)]").foregroundStyle(.secondary) }
+                Spacer()
+                Text(relativeAge(s.lastEventTs)).foregroundStyle(.secondary)
             }
-            Spacer()
-            Text(relativeAge(s.lastEventTs)).foregroundStyle(.secondary)
+            if s.status == .waitingInput, let msg = s.lastMessage {
+                Text(msg).font(.caption).foregroundStyle(.orange).padding(.leading, 16)
+            }
         }
+        .padding(4)
+        .background(s.status == .waitingInput ? Color.orange.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {
             if let id = s.terminalId { GhosttyFocus.focus(terminalId: id) }
