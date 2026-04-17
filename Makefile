@@ -4,16 +4,16 @@ build:
 	bash scripts/build-release.sh
 
 install: build
-	cargo install --path ccsplit-logger
-	cp -R dist/ccsplit-app.app /Applications/
-	ccsplit-logger install
-	@echo "ccsplit installed. Launch ccsplit-app from /Applications or reboot."
+	cargo install --path ccfocus-logger
+	cp -R dist/ccfocus-app.app /Applications/
+	ccfocus-logger install
+	@echo "ccfocus installed. Launch ccfocus-app from /Applications or reboot."
 
 test:
-	cargo test -p ccsplit-logger
-	cargo clippy -p ccsplit-logger
-	xcodegen generate --spec ccsplit-app/project.yml --project ccsplit-app/
-	xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-appTests -configuration Debug test
+	cargo test -p ccfocus-logger
+	cargo clippy -p ccfocus-logger
+	xcodegen generate --spec ccfocus-app/project.yml --project ccfocus-app/
+	xcodebuild -project ccfocus-app/ccfocus-app.xcodeproj -scheme ccfocus-appTests -configuration Debug test
 
 clean:
 	cargo clean

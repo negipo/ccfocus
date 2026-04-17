@@ -1,4 +1,4 @@
-# ccsplit Runtime Verification Results
+# ccfocus Runtime Verification Results
 
 ## 検証A: SessionStart $PPID
 
@@ -30,12 +30,12 @@ GHOSTTY_SURFACE_ID は hook env に伝播しないため、upstream PR (terminal
 ## 検証B: SessionStart発火時のGhostty terminal name
 
 - 実施日時: 2026-04-16T18:20:30
-- 対象ペイン (claude -p, cwd=ccsplit):
+- 対象ペイン (claude -p, cwd=ccfocus):
   - 即時: name=claude -p "hello" --output-format text; exit
   - 100ms後: 同上
   - 500ms後: 同上
   - 1500ms後: 同上
-- 別ペイン (インタラクティブ claude, cwd=ccsplit):
+- 別ペイン (インタラクティブ claude, cwd=ccfocus):
   - 即時: name=⠐ Claude Code
   - 100ms後: name=⠂ Claude Code
   - 500ms後: name=⠐ Claude Code
@@ -44,7 +44,7 @@ GHOSTTY_SURFACE_ID は hook env に伝播しないため、upstream PR (terminal
 ### 判定
 
 - [x] インタラクティブ claude では SessionStart 発火時点で name に "Claude Code" が含まれる (スピナー付き)
-- claude -p (非インタラクティブ) では title 書き換えが行われない → ccsplit の追跡対象外 (許容)
+- claude -p (非インタラクティブ) では title 書き換えが行われない → ccfocus の追跡対象外 (許容)
 
 ### 採用方針
 
