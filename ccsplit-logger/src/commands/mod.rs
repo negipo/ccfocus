@@ -1,3 +1,4 @@
+pub mod install;
 pub mod notification;
 pub mod pre_tool_use;
 pub mod session_start;
