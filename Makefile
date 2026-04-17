@@ -5,8 +5,9 @@ build:
 
 install: build
 	cargo install --path ccfocus-logger
+	command -v mise >/dev/null 2>&1 && mise reshim || true
 	cp -R dist/ccfocus-app.app /Applications/
-	./dist/ccfocus-logger install
+	ccfocus-logger install
 	@echo "ccfocus installed. Launch ccfocus-app from /Applications or reboot."
 
 test:
