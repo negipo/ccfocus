@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var state: AppState
     var onDismiss: () -> Void = {}
+    var onOpenSettings: () -> Void = {}
     @State private var showDeceased = false
 
     private var activeSessions: [SessionEntry] {
@@ -24,8 +25,8 @@ struct MenuBarView: View {
                 }
                 .padding(4)
             } else {
-                ForEach(activeSessions, id: \.sessionId) { s in
-                    row(s)
+                ForEach(Array(activeSessions.enumerated()), id: \.element.sessionId) { idx, s in
+                    row(s, numberHint: numberHint(forIndex: idx))
                 }
             }
             if !deceasedSessions.isEmpty {
@@ -49,7 +50,7 @@ struct MenuBarView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(deceasedSessions, id: \.sessionId) { s in
-                                row(s)
+                                row(s, numberHint: nil)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -60,9 +61,22 @@ struct MenuBarView: View {
             Divider()
             HStack {
                 Color.clear.frame(width: 10, height: 10)
+                Text("Settings").foregroundStyle(.secondary)
+                Spacer()
+                Text("⌘,").font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+            }
+            .padding(4)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onDismiss()
+                onOpenSettings()
+            }
+            Divider()
+            HStack {
+                Color.clear.frame(width: 10, height: 10)
                 Text("Quit").foregroundStyle(.secondary)
                 Spacer()
-                Text("⌘Q").font(.caption).foregroundStyle(.tertiary)
+                Text("⌘Q").font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
             }
             .padding(4)
             .contentShape(Rectangle())
@@ -79,7 +93,12 @@ struct MenuBarView: View {
         }
     }
 
-    private func row(_ s: SessionEntry) -> some View {
+    private func numberHint(forIndex idx: Int) -> String? {
+        guard idx < 10 else { return nil }
+        return idx == 9 ? "0" : String(idx + 1)
+    }
+
+    private func row(_ s: SessionEntry, numberHint: String?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
@@ -92,6 +111,9 @@ struct MenuBarView: View {
                 if let b = s.gitBranch { Text("[\(b)]").foregroundStyle(.secondary) }
                 Spacer()
                 Text(relativeAge(s.lastEventTs)).foregroundStyle(.secondary)
+                if let numberHint {
+                    Text(numberHint).font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+                }
             }
             if s.status == .waitingInput, let msg = s.lastMessage {
                 Text(msg).font(.caption).foregroundStyle(.orange).padding(.leading, 16)
