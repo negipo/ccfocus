@@ -15,40 +15,46 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if state.registry.sessions.isEmpty {
-                Text("No sessions").foregroundStyle(.secondary)
+            if activeSessions.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("No active sessions").foregroundStyle(.secondary)
+                    Text("Start a new Claude Code session to get going.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(4)
             } else {
                 ForEach(activeSessions, id: \.sessionId) { s in
                     row(s)
                 }
-                if !deceasedSessions.isEmpty {
-                    Divider()
-                    HStack {
-                        Image(systemName: showDeceased ? "chevron.down" : "chevron.right")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 10)
-                        Text("deceased (\(deceasedSessions.count))")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(4)
-                    .contentShape(Rectangle())
-                    .onTapGesture { showDeceased.toggle() }
-                    if showDeceased {
-                        let rowHeight: CGFloat = 28
-                        let maxVisible: CGFloat = 19.5
-                        let height = min(CGFloat(deceasedSessions.count) * rowHeight, maxVisible * rowHeight)
-                        ScrollView(showsIndicators: false) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(deceasedSessions, id: \.sessionId) { s in
-                                    row(s)
-                                }
+            }
+            if !deceasedSessions.isEmpty {
+                Divider()
+                HStack {
+                    Image(systemName: showDeceased ? "chevron.down" : "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 10)
+                    Text("deceased (\(deceasedSessions.count))")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(4)
+                .contentShape(Rectangle())
+                .onTapGesture { showDeceased.toggle() }
+                if showDeceased {
+                    let rowHeight: CGFloat = 28
+                    let maxVisible: CGFloat = 19.5
+                    let height = min(CGFloat(deceasedSessions.count) * rowHeight, maxVisible * rowHeight)
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(deceasedSessions, id: \.sessionId) { s in
+                                row(s)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .frame(height: height)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(height: height)
                 }
             }
             Divider()
