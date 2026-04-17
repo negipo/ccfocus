@@ -12,9 +12,15 @@ final class SettingsWindowController {
             return
         }
         let hosting = NSHostingController(rootView: SettingsView())
-        let window = NSWindow(contentViewController: hosting)
+        let contentRect = NSRect(x: 0, y: 0, width: 420, height: 140)
+        let window = NSWindow(
+            contentRect: contentRect,
+            styleMask: [.titled, .closable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
         window.title = "ccfocus Settings"
-        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.contentViewController = hosting
         window.isReleasedWhenClosed = false
         window.center()
         self.window = window

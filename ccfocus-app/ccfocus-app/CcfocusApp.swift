@@ -52,7 +52,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         hotkeyController.onToggleFocus = { [weak self] in self?.handleHotkey() }
         hotkeyController.start()
 
+        setupMainMenu()
         observeKeyWindowNotifications()
+    }
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu()
+        let settingsItem = NSMenuItem(
+            title: "Settings…",
+            action: #selector(openSettingsFromMenu),
+            keyEquivalent: ","
+        )
+        settingsItem.keyEquivalentModifierMask = .command
+        settingsItem.target = self
+        appMenu.addItem(settingsItem)
+        appMenuItem.submenu = appMenu
+        NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func openSettingsFromMenu() {
+        settingsWindowController.show()
     }
 
     @objc private func togglePopover() {
@@ -64,15 +86,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func handleHotkey() {
-        let action = stateMachine.handleHotkey()
-        switch action {
-        case .showAndFocus:
+        if popover.isShown {
+            let isKey = popover.contentViewController?.view.window?.isKeyWindow ?? false
+            if isKey {
+                popover.performClose(nil)
+            } else {
+                focusPopover()
+            }
+        } else {
             showPopoverUnfocused()
             focusPopover()
-        case .focus:
-            focusPopover()
-        case .close:
-            popover.performClose(nil)
         }
     }
 
@@ -95,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        guard stateMachine.state == .openFocused else { return false }
+        guard popover.contentViewController?.view.window?.isKeyWindow == true else { return false }
         if event.keyCode == 53 {
             popover.performClose(nil)
             return true
