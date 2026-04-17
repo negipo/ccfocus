@@ -36,14 +36,31 @@ struct MenuBarView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { showDeceased.toggle() }
                     if showDeceased {
-                        ForEach(deceasedSessions, id: \.sessionId) { s in
-                            row(s)
+                        let rowHeight: CGFloat = 28
+                        let maxVisible: CGFloat = 19.5
+                        let height = min(CGFloat(deceasedSessions.count) * rowHeight, maxVisible * rowHeight)
+                        ScrollView(showsIndicators: false) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(deceasedSessions, id: \.sessionId) { s in
+                                    row(s)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .frame(height: height)
                     }
                 }
             }
             Divider()
-            Button("Quit ccsplit") { NSApp.terminate(nil) }.keyboardShortcut("q")
+            HStack {
+                Color.clear.frame(width: 10, height: 10)
+                Text("Quit").foregroundStyle(.secondary)
+                Spacer()
+                Text("⌘Q").font(.caption).foregroundStyle(.tertiary)
+            }
+            .padding(4)
+            .contentShape(Rectangle())
+            .onTapGesture { NSApp.terminate(nil) }
         }
         .padding(8)
         .frame(minWidth: 320)
