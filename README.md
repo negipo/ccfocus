@@ -16,11 +16,12 @@ cd ccsplit
 make install
 ```
 
-This builds ccsplit-logger (CLI) and ccsplit-app (menu bar app), registers Claude Code hooks, and copies the app to /Applications. The app registers itself as a login item on first launch.
+This builds ccsplit-logger (CLI) and ccsplit-app (menu bar app), registers Claude Code hooks, and copies the app to /Applications.
 
-To install only ccsplit-logger (without the menu bar app) from the remote:
+## Usage
 
 ```bash
-cargo install --git https://github.com/negipo/ccsplit ccsplit-logger
-ccsplit-logger install  # register Claude Code hooks
+open /Applications/ccsplit-app.app
 ```
+
+The app appears in the menu bar. It registers itself as a login item on first launch, so it will start automatically on reboot.
