@@ -3015,7 +3015,7 @@ Files:
 - Modify: `ccsplit-app/ccsplit-app/MenuBarView.swift`
 - Modify: `ccsplit-app/ccsplit-app/AppState.swift`
 
-- [ ] Step 1: `waitingInput` 行をハイライト (背景色橙寄り) + 1行下にメッセージを表示
+- [x] Step 1: `waitingInput` 行をハイライト (背景色橙寄り) + 1行下にメッセージを表示
 
 MenuBarView の `row(_:)` で `if s.status == .waitingInput` 分岐し、`VStack(alignment:.leading)` で2行レイアウト。
 
@@ -3042,11 +3042,11 @@ private func row(_ s: SessionEntry) -> some View {
 }
 ```
 
-- [ ] Step 2: 手動確認
+- [x] Step 2: 手動確認
 
 Claude Code内でBashツール等を呼んで承認待ちにし、メニューを開くと該当行がハイライト + message表示されていることを確認。
 
-- [ ] Step 3: コミット
+- [x] Step 3: コミット
 
 メッセージ例: `feat(app): highlight waiting_input rows with notification message`
 
@@ -3056,7 +3056,7 @@ Files:
 - Modify: `ccsplit-app/ccsplit-app/AppState.swift`
 - Modify: `ccsplit-app/ccsplit-app/ccsplitApp.swift`
 
-- [ ] Step 1: UserNotifications権限要求とpost
+- [x] Step 1: UserNotifications権限要求とpost
 
 ```swift
 import UserNotifications
@@ -3076,11 +3076,11 @@ private func postBanner(for entry: SessionEntry) {
 
 `apply(_:)` の notification分岐で `if result.status == .waitingInput { postBanner(for: entry) }` を呼ぶ。
 
-- [ ] Step 2: 手動確認
+- [x] Step 2: 手動確認
 
 Claude Code の Notification Hook発火でmacOSバナーが出ること。
 
-- [ ] Step 3: コミット
+- [x] Step 3: コミット
 
 メッセージ例: `feat(app): post macOS banner on Notification events`
 
@@ -3096,7 +3096,7 @@ Files:
 - Modify: `ccsplit-app/ccsplit-app/AppState.swift` (pairings 読み書きと起動時ロード)
 - Modify: `ccsplit-app/ccsplit-app/LivenessChecker.swift` (削除済みterminalのpairingを自動クリーンアップ)
 
-- [ ] Step 1: `ManualPairingsStore` のテスト
+- [x] Step 1: `ManualPairingsStore` のテスト
 
 ```swift
 import XCTest
@@ -3136,7 +3136,7 @@ final class ManualPairingsStoreTests: XCTestCase {
 }
 ```
 
-- [ ] Step 2: `ManualPairingsStore.swift` 実装
+- [x] Step 2: `ManualPairingsStore.swift` 実装
 
 ```swift
 import Foundation
@@ -3179,12 +3179,12 @@ struct ManualPairingsStore {
 }
 ```
 
-- [ ] Step 3: テスト通過
+- [x] Step 3: テスト通過
 
 Run: `xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-app -only-testing:ccsplit-appTests/ManualPairingsStoreTests test`
 Expected: 3 passed
 
-- [ ] Step 4: AppStateに pairings の読み書きを組み込む
+- [x] Step 4: AppStateに pairings の読み書きを組み込む
 
 ```swift
 // AppState.swift 追加箇所
@@ -3208,7 +3208,7 @@ func effectiveTerminalId(for entry: SessionEntry) -> String? {
 }
 ```
 
-- [ ] Step 5: `ManualPairView.swift`
+- [x] Step 5: `ManualPairView.swift`
 
 ```swift
 import SwiftUI
@@ -3247,7 +3247,7 @@ struct ManualPairView: View {
 
 候補取得 `candidates` は `enumerate_terminals` 相当のロジックをswift側にも用意する (AppleScriptで全terminal列挙 → 配列化)。`ccsplit-app/ccsplit-app/GhosttyFocus.swift` に `GhosttyFocus.listTerminals() -> [(id:, cwd:, name:)]` を追加。
 
-- [ ] Step 6: `MenuBarView` の未紐付け行
+- [x] Step 6: `MenuBarView` の未紐付け行
 
 ```swift
 // row(_:) の冒頭で分岐
@@ -3268,7 +3268,7 @@ if state.effectiveTerminalId(for: s) == nil {
 
 `AppState` に `@Published var manualPairingSheet: SessionEntry?` を持たせ、sheet modifier で `ManualPairView` を出す。
 
-- [ ] Step 7: LivenessCheckerで無効pairing削除
+- [x] Step 7: LivenessCheckerで無効pairing削除
 
 ```swift
 // LivenessChecker.swift に追加
@@ -3289,14 +3289,14 @@ if LivenessChecker.cleanupPairings(store: &pairings, liveTerminals: liveTerms) {
 }
 ```
 
-- [ ] Step 8: 手動確認
+- [x] Step 8: 手動確認
 
 - 同cwdで2ペイン開き、両方で `claude` 起動 → 両方 `terminal_id=null` で未紐付け行として表示される
 - 片方の行の手動紐付けUIから1つpaneを選ぶ → focus飛ぶ
 - ccsplit.appを `Quit` して再起動 → 先ほど紐付けたpaneがメニュー行のクリックで再びfocus飛ぶ (永続化が効いている)
 - 紐付け先のpaneをGhosttyで閉じる → 10〜20秒以内に `manual_pairings.json` から該当エントリが消え、UIでまた未紐付け行に戻る
 
-- [ ] Step 9: コミット
+- [x] Step 9: コミット
 
 メッセージ例: `feat(app): persist manual pane pairings and cleanup stale entries`
 
