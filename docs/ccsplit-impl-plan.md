@@ -3401,7 +3401,7 @@ Expected: 1 passed
 Files:
 - Create: `scripts/build-release.sh`
 
-- [ ] Step 1: スクリプト作成
+- [x] Step 1: スクリプト作成
 
 ```bash
 #!/bin/bash
@@ -3429,7 +3429,7 @@ cp -R "$APP_PATH" dist/
 \echo "app bundle: dist/ccsplit-app.app"
 ```
 
-- [ ] Step 2: 実行して dist/ に logger と .appバンドル が並ぶことを確認
+- [x] Step 2: 実行して dist/ に logger と .appバンドル が並ぶことを確認
 
 Run: `bash scripts/build-release.sh && ls dist/`
 Expected: `ccsplit-app.app ccsplit-logger`
@@ -3437,7 +3437,7 @@ Expected: `ccsplit-app.app ccsplit-logger`
 Run: `open dist/ccsplit-app.app`
 Expected: メニューバーにアイコンが出る (Dockアイコンなし)
 
-- [ ] Step 3: コミット
+- [x] Step 3: コミット
 
 メッセージ例: `chore: release build script emitting logger CLI and app bundle`
 
@@ -3446,13 +3446,13 @@ Expected: メニューバーにアイコンが出る (Dockアイコンなし)
 Files:
 - Create: `ccsplit-logger/src/commands/install.rs`
 
-- [ ] Step 1: `ccsplit-logger install` で `~/.claude/settings.json` に5hookをマージ
+- [x] Step 1: `ccsplit-logger install` で `~/.claude/settings.json` に5hookをマージ
 
 設計ドキュメントの `ユーザ側のセットアップ` セクションのJSON片を、既存settings.jsonに非破壊マージする実装を追加 (serde_json::Value でマージ)。
 
-- [ ] Step 2: idempotent確認テスト (一時ファイルで)
+- [x] Step 2: idempotent確認テスト (一時ファイルで)
 
-- [ ] Step 3: コミット
+- [x] Step 3: コミット
 
 メッセージ例: `feat(logger): add install subcommand merging hooks into settings.json`
 
