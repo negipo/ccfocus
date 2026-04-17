@@ -7,6 +7,7 @@ final class AppState: ObservableObject {
     @Published private(set) var registry = SessionRegistry()
     @Published private(set) var pairings = ManualPairingsStore(fileURL: ManualPairingsStore.defaultURL())
     @Published var manualPairingSession: SessionEntry?
+    @Published private(set) var cachedTerminals: [GhosttyTerminalInfo] = []
     private let reader = LogTail.Reader()
     private var watcher: LogTail.Watcher?
     private var livenessTimer: Timer?
@@ -15,6 +16,7 @@ final class AppState: ObservableObject {
         try? pairings.load()
         replayAllJsonl()
         startWatching()
+        runLivenessCheck()
         startLivenessTimer()
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
@@ -30,6 +32,7 @@ final class AppState: ObservableObject {
     }
 
     func presentManualPair(for entry: SessionEntry) {
+        cachedTerminals = GhosttyFocus.listTerminals()
         manualPairingSession = entry
     }
 

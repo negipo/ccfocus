@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var state: AppState
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -17,34 +18,24 @@ struct MenuBarView: View {
         }
         .padding(8)
         .frame(minWidth: 320)
-        .sheet(item: $state.manualPairingSession) { entry in
-            ManualPairView(
-                sessionId: entry.sessionId,
-                cwd: entry.cwd,
-                candidates: GhosttyFocus.listTerminals()
-            ) { terminalId in
-                state.setManualPairing(sessionId: entry.sessionId, terminalId: terminalId)
-                state.manualPairingSession = nil
-            }
+    }
+
+    private var isUnlinked: (SessionEntry) -> Bool {
+        { s in
+            [.running, .waitingInput, .done].contains(s.status)
+                && state.effectiveTerminalId(for: s) == nil
         }
     }
 
     private func row(_ s: SessionEntry) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            if state.effectiveTerminalId(for: s) == nil {
-                Button {
-                    state.presentManualPair(for: s)
-                } label: {
-                    HStack {
-                        Image(systemName: "link.badge.plus")
-                        Text("未紐付け: \((s.cwd as NSString).lastPathComponent)")
-                        Spacer()
-                    }
-                }
-                .buttonStyle(.plain)
-            }
             HStack {
                 Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
+                if isUnlinked(s) {
+                    Image(systemName: "link.badge.plus")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 Text((s.cwd as NSString).lastPathComponent).fontWeight(s.status == .waitingInput ? .semibold : .regular)
                 if let b = s.gitBranch { Text("[\(b)]").foregroundStyle(.secondary) }
                 Spacer()
@@ -58,7 +49,10 @@ struct MenuBarView: View {
         .background(s.status == .waitingInput ? Color.orange.opacity(0.1) : Color.clear)
         .contentShape(Rectangle())
         .onTapGesture {
-            if let id = state.effectiveTerminalId(for: s) { GhosttyFocus.focus(terminalId: id) }
+            if let id = state.effectiveTerminalId(for: s) {
+                GhosttyFocus.focus(terminalId: id)
+                dismiss()
+            }
         }
     }
 

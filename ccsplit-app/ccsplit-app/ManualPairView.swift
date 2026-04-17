@@ -18,7 +18,7 @@ struct ManualPairView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text(c.name)
-                            Text(c.cwd).font(.caption).foregroundStyle(.secondary)
+                            Text(c.wd).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Button("このpaneにfocus") {
