@@ -28,6 +28,7 @@ xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-appTests -
 - ccsplit-app/ccsplit-app.xcodeprojはproject.ymlから生成されるため、gitに含めない。Swiftファイルを追加した場合は`xcodegen generate`を再実行する
 - コミット前にRustは`cargo test`と`cargo clippy`、Swiftは`xcodebuild test`を実行する
 - PreToolUse hookがツール呼び出しをブロックした場合、回避策を試みず、ユーザに報告して指示を待つ
+- ドキュメント (README.md等) は英語で記述する
 
 ## Manual Verification
 
