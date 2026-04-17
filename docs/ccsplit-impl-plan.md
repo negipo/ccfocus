@@ -3310,7 +3310,7 @@ Files:
 - Create: `ccsplit-app/ccsplit-app/LogRotator.swift`
 - Create: `ccsplit-app/ccsplit-appTests/LogRotatorTests.swift`
 
-- [ ] Step 1: テスト
+- [x] Step 1: テスト
 
 ```swift
 import XCTest
@@ -3336,7 +3336,7 @@ final class LogRotatorTests: XCTestCase {
 }
 ```
 
-- [ ] Step 2: 実装
+- [x] Step 2: 実装
 
 ```swift
 import Foundation
@@ -3370,7 +3370,7 @@ enum LogRotator {
 }
 ```
 
-- [ ] Step 3: AppStateで起動時 + 1日1回呼ぶ
+- [x] Step 3: AppStateで起動時 + 1日1回呼ぶ
 
 ```swift
 func bootstrap() {
@@ -3383,12 +3383,12 @@ Timer.scheduledTimer(withTimeInterval: 24 * 3600, repeats: true) { [weak self] _
 }
 ```
 
-- [ ] Step 4: テスト通過
+- [x] Step 4: テスト通過
 
 Run: `xcodebuild -project ccsplit-app/ccsplit-app.xcodeproj -scheme ccsplit-app -only-testing:ccsplit-appTests/LogRotatorTests test`
 Expected: 1 passed
 
-- [ ] Step 5: コミット
+- [x] Step 5: コミット
 
 メッセージ例: `feat(app): rotate event log files past 7 day retention`
 
