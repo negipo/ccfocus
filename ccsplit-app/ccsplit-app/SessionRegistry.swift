@@ -70,7 +70,12 @@ struct SessionRegistry {
     }
 
     func sortedByLastEventDesc() -> [SessionEntry] {
-        sessions.values.sorted { $0.lastEventTs > $1.lastEventTs }
+        sessions.values.sorted {
+            if ($0.status == .deceased) != ($1.status == .deceased) {
+                return $1.status == .deceased
+            }
+            return $0.lastEventTs > $1.lastEventTs
+        }
     }
 }
 

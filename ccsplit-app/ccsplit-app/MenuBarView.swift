@@ -2,15 +2,44 @@ import SwiftUI
 
 struct MenuBarView: View {
     @ObservedObject var state: AppState
-    @Environment(\.dismiss) private var dismiss
+    var onDismiss: () -> Void = {}
+    @State private var showDeceased = false
+
+    private var activeSessions: [SessionEntry] {
+        state.registry.sortedByLastEventDesc().filter { $0.status != .deceased }
+    }
+
+    private var deceasedSessions: [SessionEntry] {
+        state.registry.sortedByLastEventDesc().filter { $0.status == .deceased }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if state.registry.sessions.isEmpty {
                 Text("No sessions").foregroundStyle(.secondary)
             } else {
-                ForEach(state.registry.sortedByLastEventDesc(), id: \.sessionId) { s in
+                ForEach(activeSessions, id: \.sessionId) { s in
                     row(s)
+                }
+                if !deceasedSessions.isEmpty {
+                    Divider()
+                    HStack {
+                        Image(systemName: showDeceased ? "chevron.down" : "chevron.right")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 10)
+                        Text("deceased (\(deceasedSessions.count))")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(4)
+                    .contentShape(Rectangle())
+                    .onTapGesture { showDeceased.toggle() }
+                    if showDeceased {
+                        ForEach(deceasedSessions, id: \.sessionId) { s in
+                            row(s)
+                        }
+                    }
                 }
             }
             Divider()
@@ -51,7 +80,7 @@ struct MenuBarView: View {
         .onTapGesture {
             if let id = state.effectiveTerminalId(for: s) {
                 GhosttyFocus.focus(terminalId: id)
-                dismiss()
+                onDismiss()
             }
         }
     }

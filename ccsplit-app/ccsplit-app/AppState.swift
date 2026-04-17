@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import UserNotifications
 
 @MainActor
 final class AppState: ObservableObject {
@@ -11,6 +10,8 @@ final class AppState: ObservableObject {
     private let reader = LogTail.Reader()
     private var watcher: LogTail.Watcher?
     private var livenessTimer: Timer?
+    private var bootstrapDone = false
+    var onOpenPopover: (() -> Void)?
 
     func bootstrap() {
         try? pairings.load()
@@ -18,7 +19,9 @@ final class AppState: ObservableObject {
         startWatching()
         runLivenessCheck()
         startLivenessTimer()
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.bootstrapDone = true
+        }
     }
 
     func setManualPairing(sessionId: String, terminalId: String) {
@@ -69,23 +72,16 @@ final class AppState: ObservableObject {
                 if let ev = try? EventLogReader.decode(line: line) {
                     registry.apply(ev)
                     appliedAny = true
-                    if case .notification(let n) = ev.kind,
+                    if bootstrapDone,
+                       case .notification(let n) = ev.kind,
                        let entry = registry.sessions[n.sessionId],
                        entry.status == .waitingInput {
-                        postBanner(for: entry)
+                        onOpenPopover?()
                     }
                 }
             }
         }
         if appliedAny { objectWillChange.send() }
-    }
-
-    private func postBanner(for entry: SessionEntry) {
-        let content = UNMutableNotificationContent()
-        content.title = (entry.cwd as NSString).lastPathComponent
-        content.body = entry.lastMessage ?? "waiting for input"
-        let req = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(req)
     }
 
     private func startLivenessTimer() {
