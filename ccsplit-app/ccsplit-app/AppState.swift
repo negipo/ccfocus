@@ -10,15 +10,18 @@ final class AppState: ObservableObject {
     private let reader = LogTail.Reader()
     private var watcher: LogTail.Watcher?
     private var livenessTimer: Timer?
+    private var rotationTimer: Timer?
     private var bootstrapDone = false
     var onOpenPopover: (() -> Void)?
 
     func bootstrap() {
+        LogRotator.rotate(directory: EventLogReader.eventsDir(), now: Date(), retentionDays: 7)
         try? pairings.load()
         replayAllJsonl()
         startWatching()
         runLivenessCheck()
         startLivenessTimer()
+        startRotationTimer()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             self?.bootstrapDone = true
         }
@@ -103,6 +106,15 @@ final class AppState: ObservableObject {
     private func startLivenessTimer() {
         livenessTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.runLivenessCheck() }
+        }
+    }
+
+    private func startRotationTimer() {
+        rotationTimer = Timer.scheduledTimer(withTimeInterval: 24 * 3600, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                LogRotator.rotate(directory: EventLogReader.eventsDir(), now: Date(), retentionDays: 7)
+                self?.objectWillChange.send()
+            }
         }
     }
 
