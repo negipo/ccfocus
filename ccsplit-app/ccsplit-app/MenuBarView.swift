@@ -90,12 +90,20 @@ struct MenuBarView: View {
             if s.status == .waitingInput, let msg = s.lastMessage {
                 Text(msg).font(.caption).foregroundStyle(.orange).padding(.leading, 16)
             }
+            if s.status == .done, s.doneNotified {
+                Text("done").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
+            }
         }
         .padding(4)
-        .background(s.status == .waitingInput ? Color.orange.opacity(0.1) : Color.clear)
+        .background(
+            s.status == .waitingInput ? Color.orange.opacity(0.1) :
+            s.status == .done && s.doneNotified ? Color.gray.opacity(0.1) :
+            Color.clear
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             state.clearMessage(s.sessionId)
+            state.clearDoneNotified(s.sessionId)
             if let id = state.effectiveTerminalId(for: s) {
                 GhosttyFocus.focus(terminalId: id)
                 onDismiss()

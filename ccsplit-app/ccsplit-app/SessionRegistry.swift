@@ -16,6 +16,7 @@ struct SessionEntry: Identifiable {
     var lastMessage: String?
     var deceasedReason: DeceasedReason?
     var startedAt: String
+    var doneNotified: Bool = false
 }
 
 struct SessionRegistry {
@@ -56,6 +57,7 @@ struct SessionRegistry {
             mutate(sid) { e in
                 e.status = SessionStatus.transitioned(current: e.status, event: .stop)
                 e.lastEventTs = ev.ts
+                e.doneNotified = true
             }
         case .preToolUse(let p):
             mutate(p.sessionId) { e in
@@ -72,6 +74,10 @@ struct SessionRegistry {
 
     mutating func clearMessage(_ sid: String) {
         mutate(sid) { $0.lastMessage = nil }
+    }
+
+    mutating func clearDoneNotified(_ sid: String) {
+        mutate(sid) { $0.doneNotified = false }
     }
 
     mutating func mutate(_ sid: String, _ f: (inout SessionEntry) -> Void) {

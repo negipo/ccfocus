@@ -29,6 +29,11 @@ final class AppState: ObservableObject {
         objectWillChange.send()
     }
 
+    func clearDoneNotified(_ sessionId: String) {
+        registry.clearDoneNotified(sessionId)
+        objectWillChange.send()
+    }
+
     func setManualPairing(sessionId: String, terminalId: String) {
         pairings.set(sessionId: sessionId, terminalId: terminalId)
         try? pairings.save()
@@ -77,11 +82,17 @@ final class AppState: ObservableObject {
                 if let ev = try? EventLogReader.decode(line: line) {
                     registry.apply(ev)
                     appliedAny = true
-                    if bootstrapDone,
-                       case .notification(let n) = ev.kind,
-                       let entry = registry.sessions[n.sessionId],
-                       entry.status == .waitingInput {
-                        onOpenPopover?()
+                    if bootstrapDone {
+                        if case .notification(let n) = ev.kind,
+                           let entry = registry.sessions[n.sessionId],
+                           entry.status == .waitingInput {
+                            onOpenPopover?()
+                        }
+                        if case .stop(let sid) = ev.kind,
+                           let entry = registry.sessions[sid],
+                           entry.status == .done {
+                            onOpenPopover?()
+                        }
                     }
                 }
             }

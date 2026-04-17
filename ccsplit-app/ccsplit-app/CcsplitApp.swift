@@ -1,4 +1,9 @@
+import AppKit
 import SwiftUI
+
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
 
 @main
 struct CcsplitApp: App {
@@ -28,9 +33,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         popover = NSPopover()
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(
+        let vc = NSViewController()
+        vc.view = FirstMouseHostingView(
             rootView: MenuBarView(state: state) { [weak self] in self?.popover.performClose(nil) }
         )
+        popover.contentViewController = vc
     }
 
     @objc private func togglePopover() {
@@ -44,6 +51,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPopover() {
         guard let button = statusItem.button else { return }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        NSApp.activate(ignoringOtherApps: true)
     }
 }
