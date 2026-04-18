@@ -47,19 +47,24 @@ States are listed from most to least urgent for the user to act on.
 
 ### Transitions
 
-- `session_start` puts a session into `idle`.
-- `user_prompt_submit` and `pre_tool_use` move it to `running`.
-- `stop` with a detected question-like ending goes to `asking`; otherwise `done`.
-- `notification` moves a session to `waitingInput`. Claude Code fires a Notification whenever it shows a permission prompt OR sits idle for about one minute, so a forgotten `done` session escalates to `waitingInput` roughly 60 seconds after the last event, regardless of whether asking-detection fired.
-- Any active state (`idle` / `running` / `asking` / `waitingInput` / `done`) becomes `stale` after 30 minutes without new events.
-- A `stale` session with no tracked Claude process is marked `deceased` after 2.5 hours.
+- `session_start` → `idle`.
+- `user_prompt_submit` and `pre_tool_use` → `running`.
+- `stop` with a detected question-like ending → `asking`; otherwise `done`.
+- `notification` → `waitingInput`. Claude Code emits a Notification both for permission prompts and for its own ~60-second idle timeout, so a forgotten `done` session escalates to `waitingInput` roughly one minute after the last event (regardless of whether asking-detection fired). This is the primary safety net for questions that the heuristic misses.
+- Any active state (`idle` / `running` / `asking` / `waitingInput` / `done`) → `stale` after 30 minutes without new events.
+- `stale` with no tracked Claude process → `deceased` after 2.5 hours.
 - `deceased` is terminal.
 
-The popover auto-opens when a session transitions into `asking`, `waitingInput`, or `done` so you can react without polling the menu bar.
+The popover auto-opens when a session transitions into `asking`, `waitingInput`, or `done`, so you can react without polling the menu bar.
 
 ### How `asking` is detected
 
-At `stop` hook time the logger reads the tail of the session's transcript jsonl, extracts the most recent assistant text, and checks whether the last three non-empty lines contain a half- or full-width question mark or a polite-request pattern (`確認してください`, `試していただけ`, etc.). If the heuristic can't read the transcript, the session falls back to `done` and will still be caught by the 60-second idle `waitingInput` escalation.
+At `stop` hook time the logger reads the tail of the session's transcript jsonl, extracts the most recent assistant text, and checks whether the last three non-empty lines contain either:
+
+- a half- or full-width question mark (`?` / `？`), or
+- a polite-request phrase — Japanese (`確認してください`, `試していただけ`, `教えてください`, ...) or English case-insensitive (`let me know`, `please confirm`, `please advise`).
+
+If the heuristic can't read the transcript (missing file, no assistant text yet), the session falls back to `done` and gets rescued by the 60-second idle `waitingInput` escalation described above.
 
 ## Building from source
 

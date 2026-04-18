@@ -8,7 +8,7 @@ const TAIL_READ_LIMIT: u64 = 256 * 1024;
 
 static ASK_QMARK: Lazy<Regex> = Lazy::new(|| Regex::new(r"[?？]").unwrap());
 static ASK_POLITE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(確認してください|試していただけ|確認していただけ|教えていただけ|教えてください)")
+    Regex::new(r"(?i)(確認してください|試していただけ|確認していただけ|教えていただけ|教えてください|let me know|please confirm|please advise)")
         .unwrap()
 });
 
@@ -105,6 +105,26 @@ mod tests {
     #[test]
     fn empty_text_is_not_question() {
         assert!(!classify_has_question(""));
+    }
+
+    #[test]
+    fn english_let_me_know_is_question() {
+        assert!(classify_has_question("Built and tested.\nLet me know if you'd like any changes."));
+    }
+
+    #[test]
+    fn english_please_confirm_is_question() {
+        assert!(classify_has_question("Ready to proceed. Please confirm."));
+    }
+
+    #[test]
+    fn english_please_advise_case_insensitive_is_question() {
+        assert!(classify_has_question("Two options remain. please advise"));
+    }
+
+    #[test]
+    fn english_plain_done_is_not_question() {
+        assert!(!classify_has_question("Implementation complete.\nAll tests pass."));
     }
 
     use std::io::Write;
