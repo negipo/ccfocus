@@ -155,6 +155,7 @@ struct MenuBarView: View {
         switch s {
         case .idle: return .gray
         case .running: return .green
+        case .asking: return .orange
         case .waitingInput: return .orange
         case .done: return .gray
         case .error: return .red

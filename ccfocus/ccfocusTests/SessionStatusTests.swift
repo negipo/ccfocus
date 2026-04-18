@@ -46,4 +46,28 @@ final class SessionStatusTests: XCTestCase {
     func testDeceasedStays() {
         XCTAssertEqual(SessionStatus.transitioned(current: .deceased, event: .notification), .deceased)
     }
+
+    func testStopWithQuestionTransitionsToAsking() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .running, event: .stopWithQuestion), .asking)
+    }
+
+    func testStopWithQuestionFromIdleToAsking() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .idle, event: .stopWithQuestion), .asking)
+    }
+
+    func testStopWithoutQuestionStillGoesToDone() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .running, event: .stop), .done)
+    }
+
+    func testDeceasedStaysOnStopWithQuestion() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .deceased, event: .stopWithQuestion), .deceased)
+    }
+
+    func testAskingTransitionsToRunningOnPreToolUse() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .asking, event: .preToolUse), .running)
+    }
+
+    func testAskingTransitionsToRunningOnUserPromptSubmit() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .asking, event: .userPromptSubmit), .running)
+    }
 }

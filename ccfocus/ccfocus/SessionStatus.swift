@@ -3,6 +3,7 @@ import Foundation
 enum SessionStatus: String, Equatable {
     case idle
     case running
+    case asking
     case waitingInput = "waiting_input"
     case done
     case error
@@ -15,6 +16,7 @@ enum EventTransitionKind {
     case notification
     case preToolUse
     case stop
+    case stopWithQuestion
     case userPromptSubmit
 }
 
@@ -26,6 +28,7 @@ extension SessionStatus {
         case (_, .notification): return .waitingInput
         case (_, .preToolUse): return .running
         case (_, .stop): return .done
+        case (_, .stopWithQuestion): return .asking
         case (_, .userPromptSubmit): return .running
         }
     }
