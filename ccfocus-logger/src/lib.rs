@@ -9,3 +9,4 @@ pub mod log_path;
 pub mod log_reader;
 pub mod log_writer;
 pub mod timestamp;
+pub mod transcript;
