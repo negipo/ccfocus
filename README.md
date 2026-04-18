@@ -2,6 +2,8 @@
 
 A macOS menu bar app that tracks multiple Claude Code sessions and lets you jump to the Ghostty pane that triggered a notification.
 
+![ccfocus menu bar popover](docs/screenshot.png)
+
 ## Requirements
 
 - macOS Ventura (13.0) or later
