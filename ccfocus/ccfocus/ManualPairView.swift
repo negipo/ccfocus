@@ -11,18 +11,18 @@ struct ManualPairView: View {
             Text("未紐付けセッション (cwd=\(cwd)) を紐付けるpaneを選択")
                 .font(.headline)
                 .padding(.bottom, 4)
-            List(candidates) { c in
+            List(candidates) { candidate in
                 Button {
-                    onSelect(c.id)
+                    onSelect(candidate.id)
                 } label: {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text(c.name)
-                            Text(c.wd).font(.caption).foregroundStyle(.secondary)
+                            Text(candidate.name)
+                            Text(candidate.workingDir).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Button("このpaneにfocus") {
-                            GhosttyFocus.focus(terminalId: c.id)
+                            GhosttyFocus.focus(terminalId: candidate.id)
                         }
                         .buttonStyle(.borderless)
                     }

@@ -16,7 +16,10 @@ struct ManualPairingsStore {
     }
 
     func save() throws {
-        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         let data = try JSONEncoder().encode(map)
         try data.write(to: fileURL, options: .atomic)
     }

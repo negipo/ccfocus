@@ -4,10 +4,10 @@ import XCTest
 final class EventDecodingTests: XCTestCase {
     func testStopWithHasQuestionTrue() throws {
         let raw = #"{"ts":"2026-04-18T00:00:00.000Z","event":"stop","session_id":"abc","has_question":true}"#
-        let ev = try EventLogReader.decode(line: raw)
-        if case .stop(let sid, let hq) = ev.kind {
+        let event = try EventLogReader.decode(line: raw)
+        if case .stop(let sid, let hasQuestion) = event.kind {
             XCTAssertEqual(sid, "abc")
-            XCTAssertEqual(hq, true)
+            XCTAssertEqual(hasQuestion, true)
         } else {
             XCTFail("expected stop variant")
         }
@@ -15,9 +15,9 @@ final class EventDecodingTests: XCTestCase {
 
     func testStopWithoutHasQuestion() throws {
         let raw = #"{"ts":"2026-04-18T00:00:00.000Z","event":"stop","session_id":"abc"}"#
-        let ev = try EventLogReader.decode(line: raw)
-        if case .stop(_, let hq) = ev.kind {
-            XCTAssertNil(hq)
+        let event = try EventLogReader.decode(line: raw)
+        if case .stop(_, let hasQuestion) = event.kind {
+            XCTAssertNil(hasQuestion)
         } else {
             XCTFail("expected stop variant")
         }

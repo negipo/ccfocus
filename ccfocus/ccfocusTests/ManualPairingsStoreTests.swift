@@ -17,19 +17,20 @@ final class ManualPairingsStoreTests: XCTestCase {
 
     func testLoadMissingFileReturnsEmpty() throws {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
-        var s = ManualPairingsStore(fileURL: tmp)
-        try s.load()
-        XCTAssertNil(s.get(sessionId: "x"))
+        var store = ManualPairingsStore(fileURL: tmp)
+        try store.load()
+        XCTAssertNil(store.get(sessionId: "x"))
     }
 
     func testRemoveTerminalCascadesDeletion() {
-        var s = ManualPairingsStore(fileURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json"))
-        s.set(sessionId: "s1", terminalId: "T1")
-        s.set(sessionId: "s2", terminalId: "T1")
-        s.set(sessionId: "s3", terminalId: "T2")
-        s.removePairingsReferring(terminalIds: ["T1"])
-        XCTAssertNil(s.get(sessionId: "s1"))
-        XCTAssertNil(s.get(sessionId: "s2"))
-        XCTAssertEqual(s.get(sessionId: "s3"), "T2")
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        var store = ManualPairingsStore(fileURL: tmpURL)
+        store.set(sessionId: "s1", terminalId: "T1")
+        store.set(sessionId: "s2", terminalId: "T1")
+        store.set(sessionId: "s3", terminalId: "T2")
+        store.removePairingsReferring(terminalIds: ["T1"])
+        XCTAssertNil(store.get(sessionId: "s1"))
+        XCTAssertNil(store.get(sessionId: "s2"))
+        XCTAssertEqual(store.get(sessionId: "s3"), "T2")
     }
 }

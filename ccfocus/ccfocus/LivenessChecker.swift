@@ -2,24 +2,31 @@ import Foundation
 
 struct PsInfo { let pid: UInt32; let lstart: String; let comm: String }
 
+struct ExpectedProcess {
+    let pid: UInt32
+    let lstart: String
+    let comm: String
+}
+
 enum LivenessChecker {
-    static func verify(expected: (UInt32, String, String), current: PsInfo) -> Bool {
-        current.pid == expected.0 && current.lstart == expected.1 && current.comm == expected.2
+    static func verify(expected: ExpectedProcess, current: PsInfo) -> Bool {
+        current.pid == expected.pid && current.lstart == expected.lstart && current.comm == expected.comm
     }
 
     static func queryPs(pid: UInt32) -> PsInfo? {
-        let p = Process()
-        p.launchPath = "/bin/ps"
-        p.arguments = ["-p", String(pid), "-o", "pid=,lstart=,comm="]
+        let proc = Process()
+        proc.launchPath = "/bin/ps"
+        proc.arguments = ["-p", String(pid), "-o", "pid=,lstart=,comm="]
         let out = Pipe()
-        p.standardOutput = out
-        p.standardError = Pipe()
-        do { try p.run() } catch { return nil }
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 else { return nil }
+        proc.standardOutput = out
+        proc.standardError = Pipe()
+        do { try proc.run() } catch { return nil }
+        proc.waitUntilExit()
+        guard proc.terminationStatus == 0 else { return nil }
         let data = out.fileHandleForReading.readDataToEndOfFile()
-        guard let s = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else { return nil }
-        let parts = s.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard let str = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) else { return nil }
+        let parts = str.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
         guard parts.count >= 7, let pid = UInt32(parts[0]) else { return nil }
         let lstart = parts[1...5].joined(separator: " ")
         let comm = parts[6...].joined(separator: " ")

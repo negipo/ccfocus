@@ -3,14 +3,17 @@ import XCTest
 
 final class EventLogReaderTests: XCTestCase {
     func testParsesSessionStart() throws {
-        let line = #"{"ts":"2026-04-16T09:12:34.567Z","event":"session_start","session_id":"abc","terminal_id":"B9BE","cwd":"/tmp","git_branch":"main","claude_pid":123,"claude_start_time":"Wed Apr 16 09:12:34 2026","claude_comm":"claude"}"#
-        let ev = try EventLogReader.decode(line: line)
-        switch ev.kind {
-        case .sessionStart(let s):
-            XCTAssertEqual(s.sessionId, "abc")
-            XCTAssertEqual(s.terminalId, "B9BE")
-            XCTAssertEqual(s.gitBranch, "main")
-            XCTAssertEqual(s.claudePid, 123)
+        let line =
+            #"{"ts":"2026-04-16T09:12:34.567Z","event":"session_start","session_id":"abc","#
+            + #""terminal_id":"B9BE","cwd":"/tmp","git_branch":"main","claude_pid":123,"#
+            + #""claude_start_time":"Wed Apr 16 09:12:34 2026","claude_comm":"claude"}"#
+        let event = try EventLogReader.decode(line: line)
+        switch event.kind {
+        case .sessionStart(let start):
+            XCTAssertEqual(start.sessionId, "abc")
+            XCTAssertEqual(start.terminalId, "B9BE")
+            XCTAssertEqual(start.gitBranch, "main")
+            XCTAssertEqual(start.claudePid, 123)
         default:
             XCTFail("expected session_start")
         }
@@ -18,8 +21,12 @@ final class EventLogReaderTests: XCTestCase {
 
     func testParsesStop() throws {
         let line = #"{"ts":"2026-04-16T09:15:00.000Z","event":"stop","session_id":"abc"}"#
-        let ev = try EventLogReader.decode(line: line)
-        if case .stop(let s, _) = ev.kind { XCTAssertEqual(s, "abc") } else { XCTFail() }
+        let event = try EventLogReader.decode(line: line)
+        if case .stop(let sid, _) = event.kind {
+            XCTAssertEqual(sid, "abc")
+        } else {
+            XCTFail("expected stop event")
+        }
     }
 
     func testSkipsBlankLines() throws {
