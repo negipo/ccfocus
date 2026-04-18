@@ -38,9 +38,9 @@ Each tracked session appears in the menu bar with a colored dot and an optional 
 | State          | Color       | Label                | Meaning                                                                                 |
 |----------------|-------------|----------------------|-----------------------------------------------------------------------------------------|
 | `asking`       | orange      | last text / `asking` | Claude ended its turn with a question — respond immediately                             |
-| `waitingInput` | orange      | notification message | Claude Code emitted a Notification (permission prompt, or ~60s idle after `done`)       |
+| `waitingInput` | orange      | notification message | Claude Code sent a Notification — a permission prompt, or an idle reminder ~60s after `done` |
 | `idle`         | gray        | `idle`               | Session has started; waiting for the first user prompt                                  |
-| `done`         | gray        | `done`               | Claude ended its turn without a question; escalates to `waitingInput` after ~60s idle   |
+| `done`         | gray        | `done`               | Claude ended its turn without a question; stays `done` until Claude Code sends an idle notification (~60s), which lands it in `waitingInput` |
 | `running`      | green       | —                    | Claude is working (prompt submitted, tool call in flight); you're waiting on Claude     |
 | `stale`        | dim gray    | —                    | No events for 30+ min; escalates to `deceased` after ~2.5h without a tracked process    |
 | `deceased`     | faded gray  | —                    | Claude process exited or Ghostty pane closed; terminal, collapsed at the bottom         |
