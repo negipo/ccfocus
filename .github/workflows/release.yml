@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Install xcodegen and create-dmg
+        run: brew install xcodegen create-dmg
+
+      - name: Calculate CalVer tag
+        id: calver
+        run: |
+          TODAY=$(date -u +"%Y.%m.%d")
+          PREFIX="v${TODAY}."
+          LAST_SEQ=$(git tag -l "${PREFIX}*" | while read -r tag; do echo "${tag#${PREFIX}}"; done | sort -n | tail -1)
+          if [ -z "$LAST_SEQ" ]; then
+            SEQ=1
+          else
+            SEQ=$((LAST_SEQ + 1))
+          fi
+          VERSION="${TODAY}.${SEQ}"
+          TAG="v${VERSION}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: scripts/build-release.sh
+        env:
+          CI: 'true'
+          VERSION: ${{ steps.calver.outputs.version }}
+
+      - name: Create release
+        run: |
+          gh release create ${{ steps.calver.outputs.tag }} \
+            ccfocus-${{ steps.calver.outputs.version }}-macos.dmg \
+            --generate-notes \
+            --target ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Dispatch to homebrew-tap
+        run: |
+          DMG_NAME="ccfocus-${{ steps.calver.outputs.version }}-macos.dmg"
+          SHA256=$(shasum -a 256 "$DMG_NAME" | awk '{print $1}')
+          gh api repos/negipo/homebrew-tap/dispatches \
+            --field event_type=update-ccfocus \
+            --field client_payload[version]="${{ steps.calver.outputs.version }}" \
+            --field client_payload[sha256]="$SHA256"
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
