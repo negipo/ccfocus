@@ -7,6 +7,10 @@ use anyhow::Result;
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
+use std::thread::sleep;
+use std::time::Duration;
+
+const TRANSCRIPT_SETTLE_DELAY: Duration = Duration::from_millis(500);
 
 #[derive(Debug, Deserialize)]
 struct Payload {
@@ -19,6 +23,7 @@ pub fn run() -> Result<()> {
     let mut buf = String::new();
     std::io::stdin().read_to_string(&mut buf)?;
     let p: Payload = serde_json::from_str(&buf)?;
+    sleep(TRANSCRIPT_SETTLE_DELAY);
     let has_question = p
         .transcript_path
         .as_deref()
