@@ -13,12 +13,12 @@ A macOS menu bar app that tracks multiple Claude Code sessions and lets you jump
 brew install --cask negipo/tap/ccfocus
 ```
 
-This installs `ccfocus-app` into `/Applications`, symlinks `ccfocus-logger` onto your `PATH`, clears the quarantine attribute, and registers the required hooks in `~/.claude/settings.json`.
+This installs `ccfocus` into `/Applications`, symlinks `ccfocus-logger` onto your `PATH`, clears the quarantine attribute, and registers the required hooks in `~/.claude/settings.json`.
 
 To start the menu bar app:
 
 ```bash
-open /Applications/ccfocus-app.app
+open /Applications/ccfocus.app
 ```
 
 ## Uninstall
@@ -39,4 +39,4 @@ cd ccfocus
 make install
 ```
 
-This builds `ccfocus-logger` (CLI) and `ccfocus-app` (menu bar app), registers Claude Code hooks, and copies the app to `/Applications`.
+This builds `ccfocus-logger` (CLI) and `ccfocus` (menu bar app), registers Claude Code hooks, and copies the app to `/Applications`.
