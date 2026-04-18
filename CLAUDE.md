@@ -36,7 +36,8 @@ ccfocusのUI変更を検証する際:
 pkill -x ccfocus 2>/dev/null
 xcodegen generate --spec ccfocus/project.yml --project ccfocus/
 xcodebuild -project ccfocus/ccfocus.xcodeproj -scheme ccfocus -configuration Debug build 2>&1 | tail -5
-open ~/Library/Developer/Xcode/DerivedData/ccfocus-*/Build/Products/Debug/ccfocus.app
+ls ~/Library/Developer/Xcode/DerivedData/ | rg ccfocus  # <hash> を確認 (複数残っていることがある)
+open ~/Library/Developer/Xcode/DerivedData/ccfocus-<hash>/Build/Products/Debug/ccfocus.app
 ```
 
 ccfocus-loggerの手動テスト:

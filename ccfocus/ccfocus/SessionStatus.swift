@@ -1,6 +1,7 @@
 import Foundation
 
 enum SessionStatus: String, Equatable {
+    case idle
     case running
     case waitingInput = "waiting_input"
     case done
@@ -21,7 +22,7 @@ extension SessionStatus {
     static func transitioned(current: SessionStatus?, event: EventTransitionKind) -> SessionStatus {
         if current == .deceased { return .deceased }
         switch (current, event) {
-        case (_, .sessionStart): return .running
+        case (_, .sessionStart): return .idle
         case (_, .notification): return .waitingInput
         case (_, .preToolUse): return .running
         case (_, .stop): return .done

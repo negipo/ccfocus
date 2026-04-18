@@ -40,7 +40,7 @@ struct SessionRegistry {
                 claudePid: s.claudePid,
                 claudeStartTime: s.claudeStartTime,
                 claudeComm: s.claudeComm,
-                status: .running,
+                status: .idle,
                 lastEventTs: ev.ts,
                 lastMessage: nil,
                 deceasedReason: nil,
@@ -110,7 +110,7 @@ extension SessionRegistry {
         for (sid, e) in sessions {
             guard let d = fmt.date(from: e.lastEventTs) else { continue }
             let age = now.timeIntervalSince(d)
-            if e.status == .running || e.status == .waitingInput || e.status == .done {
+            if e.status == .idle || e.status == .running || e.status == .waitingInput || e.status == .done {
                 if age >= 30 * 60 { mutate(sid) { $0.status = .stale } }
             }
             if e.status == .stale && e.claudePid == nil && age >= 2.5 * 3600 {

@@ -2,8 +2,24 @@ import XCTest
 @testable import ccfocus
 
 final class SessionStatusTests: XCTestCase {
-    func testStartToRunning() {
-        XCTAssertEqual(SessionStatus.transitioned(current: nil, event: .sessionStart), .running)
+    func testStartToIdle() {
+        XCTAssertEqual(SessionStatus.transitioned(current: nil, event: .sessionStart), .idle)
+    }
+
+    func testIdleToRunningOnUserPromptSubmit() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .idle, event: .userPromptSubmit), .running)
+    }
+
+    func testIdleToRunningOnPreToolUse() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .idle, event: .preToolUse), .running)
+    }
+
+    func testIdleToWaitingInputOnNotification() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .idle, event: .notification), .waitingInput)
+    }
+
+    func testIdleToDoneOnStop() {
+        XCTAssertEqual(SessionStatus.transitioned(current: .idle, event: .stop), .done)
     }
 
     func testNotificationSetsWaitingInput() {

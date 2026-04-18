@@ -16,7 +16,7 @@ final class SessionRegistryTests: XCTestCase {
         let s = reg.sessions["s1"]!
         XCTAssertEqual(s.terminalId, "T1")
         XCTAssertEqual(s.gitBranch, "main")
-        XCTAssertEqual(s.status, .running)
+        XCTAssertEqual(s.status, .idle)
     }
 
     func testNotificationMovesToWaitingInput() throws {
@@ -39,7 +39,20 @@ final class SessionRegistryTests: XCTestCase {
         var reg = SessionRegistry()
         for e in events { reg.apply(e) }
         XCTAssertEqual(reg.sessions["s1"]?.status, .deceased)
-        XCTAssertEqual(reg.sessions["s2"]?.status, .running)
+        XCTAssertEqual(reg.sessions["s2"]?.status, .idle)
+    }
+
+    func testIdleSessionBecomesStaleAfter30Min() throws {
+        let events = try parse([
+            #"{"ts":"2026-04-16T09:00:00.000Z","event":"session_start","session_id":"s1","terminal_id":"T1","cwd":"/a","git_branch":null,"claude_pid":null,"claude_start_time":null,"claude_comm":null}"#
+        ])
+        var reg = SessionRegistry()
+        for e in events { reg.apply(e) }
+        XCTAssertEqual(reg.sessions["s1"]?.status, .idle)
+
+        let now = ISO8601DateFormatter().date(from: "2026-04-16T09:31:00Z")!
+        reg.applyStaleAfter(now)
+        XCTAssertEqual(reg.sessions["s1"]?.status, .stale)
     }
 
     func testSortedByLastEventDesc() throws {
