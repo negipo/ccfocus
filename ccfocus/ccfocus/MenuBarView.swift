@@ -88,7 +88,7 @@ struct MenuBarView: View {
 
     private var isUnlinked: (SessionEntry) -> Bool {
         { s in
-            [.running, .waitingInput, .done].contains(s.status)
+            [.idle, .running, .waitingInput, .done].contains(s.status)
                 && state.effectiveTerminalId(for: s) == nil
         }
     }
@@ -129,11 +129,15 @@ struct MenuBarView: View {
             if s.status == .done, s.doneNotified {
                 Text("done").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
             }
+            if s.status == .idle {
+                Text("idle").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
+            }
         }
         .padding(4)
         .background(
             s.status == .waitingInput ? Color.orange.opacity(0.1) :
             s.status == .done && s.doneNotified ? Color.gray.opacity(0.1) :
+            s.status == .idle ? Color.gray.opacity(0.1) :
             Color.clear
         )
         .contentShape(Rectangle())
