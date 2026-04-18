@@ -54,3 +54,40 @@ fn terminal_id_null_is_serialized_as_null_not_missing() {
     assert!(json.contains("\"git_branch\":null"));
     assert!(json.contains("\"claude_pid\":null"));
 }
+
+#[test]
+fn stop_serializes_has_question_when_true() {
+    let ev = Event {
+        ts: "2026-04-18T00:00:00.000Z".to_string(),
+        kind: EventKind::Stop {
+            session_id: "abc".to_string(),
+            has_question: Some(true),
+        },
+    };
+    let json = serde_json::to_string(&ev).unwrap();
+    assert!(json.contains("\"event\":\"stop\""));
+    assert!(json.contains("\"has_question\":true"));
+}
+
+#[test]
+fn stop_omits_has_question_when_none() {
+    let ev = Event {
+        ts: "2026-04-18T00:00:00.000Z".to_string(),
+        kind: EventKind::Stop {
+            session_id: "abc".to_string(),
+            has_question: None,
+        },
+    };
+    let json = serde_json::to_string(&ev).unwrap();
+    assert!(!json.contains("has_question"));
+}
+
+#[test]
+fn stop_deserializes_legacy_event_without_has_question() {
+    let raw = r#"{"ts":"2026-04-18T00:00:00.000Z","event":"stop","session_id":"abc"}"#;
+    let ev: Event = serde_json::from_str(raw).unwrap();
+    match ev.kind {
+        EventKind::Stop { has_question, .. } => assert!(has_question.is_none()),
+        _ => panic!("wrong variant"),
+    }
+}

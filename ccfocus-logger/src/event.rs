@@ -25,6 +25,8 @@ pub enum EventKind {
     },
     Stop {
         session_id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        has_question: Option<bool>,
     },
     PreToolUse {
         session_id: String,

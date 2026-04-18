@@ -19,6 +19,7 @@ pub fn run() -> Result<()> {
         ts: now_iso8601(),
         kind: EventKind::Stop {
             session_id: p.session_id,
+            has_question: None,
         },
     };
     append_event_to(&log_file_for_now()?, &ev)?;
