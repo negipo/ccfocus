@@ -10,6 +10,7 @@ fn append_creates_file_with_single_line() {
         ts: "2026-04-16T00:00:00.000Z".to_string(),
         kind: EventKind::Stop {
             session_id: "abc".to_string(),
+            has_question: None,
         },
     };
     append_event_to(&path, &ev).unwrap();
@@ -27,6 +28,7 @@ fn append_two_events_produces_two_lines() {
             ts: "2026-04-16T00:00:00.000Z".to_string(),
             kind: EventKind::Stop {
                 session_id: sid.to_string(),
+                has_question: None,
             },
         };
         append_event_to(&path, &ev).unwrap();
@@ -43,6 +45,7 @@ fn append_creates_parent_dir_if_missing() {
         ts: "2026-04-16T00:00:00.000Z".to_string(),
         kind: EventKind::Stop {
             session_id: "abc".to_string(),
+            has_question: None,
         },
     };
     append_event_to(&path, &ev).unwrap();

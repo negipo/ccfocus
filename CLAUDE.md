@@ -27,6 +27,7 @@ xcodebuild -project ccfocus/ccfocus.xcodeproj -scheme ccfocusTests -configuratio
 - コミット前にRustは`cargo test`と`cargo clippy`、Swiftは`xcodebuild test`を実行する
 - PreToolUse hookがツール呼び出しをブロックした場合、回避策を試みず、ユーザに報告して指示を待つ
 - ドキュメント (README.md等) は英語で記述する
+- セッション状態・色・ラベル・遷移・タイムアウト (30分staleや60秒idle→waitingInput等) の一覧はREADME.mdの「Session states」に記載している。状態/配色/遷移/タイムアウト値のいずれかに触れる変更を入れたら、必ずREADME.mdも同じコミットで更新する
 
 ## Manual Verification
 
@@ -47,8 +48,10 @@ echo '{"session_id":"test","cwd":"/tmp"}' | CCFOCUS_LOGGER_DETACHED=1 cargo run 
 \cat ~/Library/Application\ Support/ccfocus/events/$(date +%Y-%m-%d).jsonl
 ```
 
-The binary invoked by Claude Code hooks is `~/.cargo/bin/ccfocus-logger`, placed by `cargo install --path ccfocus-logger --locked`. Re-install before verifying code changes through the real hook path:
+実 Claude Code セッションで動作検証したいときは dev ビルドで `ccfocus-logger` を差し替える (mise 管理下のシム経由で PATH を解決するため cargo install + mise reshim が必要):
 
 ```bash
-cargo install --path ccfocus-logger --locked
+make dev-install-logger    # cargo install --force + mise reshim で PATH の ccfocus-logger を差し替え
+# 新規 Claude Code セッションを立ち上げて検証
+make dev-uninstall-logger  # cargo uninstall + mise reshim で release symlink (/opt/homebrew/bin) に戻す
 ```
