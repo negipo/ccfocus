@@ -27,6 +27,7 @@ xcodebuild -project ccfocus/ccfocus.xcodeproj -scheme ccfocusTests -configuratio
 - コミット前にRustは`cargo test`と`cargo clippy`、Swiftは`xcodebuild test`を実行する
 - PreToolUse hookがツール呼び出しをブロックした場合、回避策を試みず、ユーザに報告して指示を待つ
 - ドキュメント (README.md等) は英語で記述する
+- セッション状態・色・ラベル・遷移・タイムアウト (30分staleや60秒idle→waitingInput等) の一覧はREADME.mdの「Session states」に記載している。状態/配色/遷移/タイムアウト値のいずれかに触れる変更を入れたら、必ずREADME.mdも同じコミットで更新する
 
 ## Manual Verification
 
