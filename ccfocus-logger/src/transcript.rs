@@ -1,11 +1,57 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
+
+const TAIL_READ_LIMIT: u64 = 256 * 1024;
 
 static ASK_QMARK: Lazy<Regex> = Lazy::new(|| Regex::new(r"[?？]").unwrap());
 static ASK_POLITE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(確認してください|試していただけ|確認していただけ|教えていただけ|教えてください)")
         .unwrap()
 });
+
+pub fn last_assistant_text(path: &Path) -> Option<String> {
+    let size = std::fs::metadata(path).ok()?.len();
+    let read_bytes = size.min(TAIL_READ_LIMIT);
+    let mut f = File::open(path).ok()?;
+    if size > read_bytes {
+        f.seek(SeekFrom::End(-(read_bytes as i64))).ok()?;
+    }
+    let mut buf = Vec::with_capacity(read_bytes as usize);
+    f.read_to_end(&mut buf).ok()?;
+    let start = if size > read_bytes {
+        buf.iter().position(|&b| b == b'\n').map(|i| i + 1).unwrap_or(0)
+    } else {
+        0
+    };
+    let text = std::str::from_utf8(&buf[start..]).ok()?;
+    for line in text.lines().rev() {
+        let v: serde_json::Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        if v.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+            continue;
+        }
+        let content = v
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_array());
+        let Some(content) = content else { continue };
+        let joined: Vec<&str> = content
+            .iter()
+            .filter(|c| c.get("type").and_then(|t| t.as_str()) == Some("text"))
+            .filter_map(|c| c.get("text").and_then(|t| t.as_str()))
+            .collect();
+        if joined.is_empty() {
+            continue;
+        }
+        return Some(joined.join("\n"));
+    }
+    None
+}
 
 pub fn classify_has_question(text: &str) -> bool {
     let tail: String = text
@@ -59,5 +105,56 @@ mod tests {
     #[test]
     fn empty_text_is_not_question() {
         assert!(!classify_has_question(""));
+    }
+
+    use std::io::Write;
+
+    fn write_jsonl(path: &std::path::Path, lines: &[&str]) {
+        let mut f = std::fs::File::create(path).unwrap();
+        for line in lines {
+            writeln!(f, "{}", line).unwrap();
+        }
+    }
+
+    #[test]
+    fn last_assistant_text_returns_latest_text_block() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t.jsonl");
+        write_jsonl(&path, &[
+            r#"{"type":"user","message":{"content":[{"type":"text","text":"hi"}]}}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"first"}]}}"#,
+            r#"{"type":"user","message":{"content":[{"type":"text","text":"again"}]}}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"second turn\nend?"}]}}"#,
+        ]);
+        let out = last_assistant_text(&path).unwrap();
+        assert!(out.contains("second turn"));
+        assert!(out.contains("end?"));
+    }
+
+    #[test]
+    fn last_assistant_text_joins_multiple_text_blocks() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t.jsonl");
+        write_jsonl(&path, &[
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"part1"},{"type":"tool_use","id":"x","name":"R","input":{}},{"type":"text","text":"part2?"}]}}"#,
+        ]);
+        let out = last_assistant_text(&path).unwrap();
+        assert!(out.contains("part1"));
+        assert!(out.contains("part2?"));
+    }
+
+    #[test]
+    fn last_assistant_text_missing_file_returns_none() {
+        assert!(last_assistant_text(std::path::Path::new("/no/such/file.jsonl")).is_none());
+    }
+
+    #[test]
+    fn last_assistant_text_only_tool_use_returns_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t.jsonl");
+        write_jsonl(&path, &[
+            r#"{"type":"assistant","message":{"content":[{"type":"tool_use","id":"x","name":"R","input":{}}]}}"#,
+        ]);
+        assert!(last_assistant_text(&path).is_none());
     }
 }
