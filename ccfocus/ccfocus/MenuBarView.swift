@@ -25,8 +25,8 @@ struct MenuBarView: View {
                 }
                 .padding(4)
             } else {
-                ForEach(Array(activeSessions.enumerated()), id: \.element.sessionId) { idx, s in
-                    row(s, numberHint: numberHint(forIndex: idx))
+                ForEach(Array(activeSessions.enumerated()), id: \.element.sessionId) { idx, session in
+                    row(session, numberHint: numberHint(forIndex: idx))
                 }
             }
             if !deceasedSessions.isEmpty {
@@ -49,8 +49,8 @@ struct MenuBarView: View {
                     let height = min(CGFloat(deceasedSessions.count) * rowHeight, maxVisible * rowHeight)
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 4) {
-                            ForEach(deceasedSessions, id: \.sessionId) { s in
-                                row(s, numberHint: nil)
+                            ForEach(deceasedSessions, id: \.sessionId) { session in
+                                row(session, numberHint: nil)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,9 +87,9 @@ struct MenuBarView: View {
     }
 
     private var isUnlinked: (SessionEntry) -> Bool {
-        { s in
-            [.idle, .running, .asking, .waitingInput, .done].contains(s.status)
-                && state.effectiveTerminalId(for: s) == nil
+        { session in
+            [.idle, .running, .asking, .waitingInput, .done].contains(session.status)
+                && state.effectiveTerminalId(for: session) == nil
         }
     }
 
@@ -98,66 +98,77 @@ struct MenuBarView: View {
         return idx == 9 ? "0" : String(idx + 1)
     }
 
-    private func row(_ s: SessionEntry, numberHint: String?) -> some View {
+    private func row(_ session: SessionEntry, numberHint: String?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Circle().fill(color(for: s.status)).frame(width: 10, height: 10)
-                if isUnlinked(s) {
-                    Image(systemName: "link.badge.plus")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                Text((s.cwd as NSString).lastPathComponent)
-                    .fontWeight(s.status == .waitingInput ? .semibold : .regular)
-                    .lineLimit(1)
-                if let b = s.gitBranch {
-                    Text("[\(b)]")
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .layoutPriority(-1)
-                }
-                Spacer()
-                Text(relativeAge(s.lastEventTs)).foregroundStyle(.secondary)
-                if let numberHint {
-                    Text(numberHint).font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
-                }
-            }
-            if s.status == .waitingInput, let msg = s.lastMessage {
-                Text(msg).font(.caption).foregroundStyle(.orange).padding(.leading, 16)
-            }
-            if s.status == .asking {
-                Text(s.lastMessage ?? "asking")
-                    .font(.caption).foregroundStyle(.orange).padding(.leading, 16)
-            }
-            if s.status == .done, s.doneNotified {
-                Text("done").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
-            }
-            if s.status == .idle {
-                Text("idle").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
-            }
+            rowHeader(session, numberHint: numberHint)
+            rowStatusDetail(session)
         }
         .padding(4)
-        .background(
-            s.status == .asking ? Color.orange.opacity(0.1) :
-            s.status == .waitingInput ? Color.orange.opacity(0.1) :
-            s.status == .done && s.doneNotified ? Color.gray.opacity(0.1) :
-            s.status == .idle ? Color.gray.opacity(0.1) :
-            Color.clear
-        )
+        .background(backgroundColor(for: session))
         .contentShape(Rectangle())
         .onTapGesture {
-            state.clearMessage(s.sessionId)
-            state.clearDoneNotified(s.sessionId)
-            if let id = state.effectiveTerminalId(for: s) {
+            state.clearMessage(session.sessionId)
+            state.clearDoneNotified(session.sessionId)
+            if let id = state.effectiveTerminalId(for: session) {
                 GhosttyFocus.focus(terminalId: id)
                 onDismiss()
             }
         }
     }
 
-    private func color(for s: SessionStatus) -> Color {
-        switch s {
+    private func rowHeader(_ session: SessionEntry, numberHint: String?) -> some View {
+        HStack {
+            Circle().fill(color(for: session.status)).frame(width: 10, height: 10)
+            if isUnlinked(session) {
+                Image(systemName: "link.badge.plus")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Text((session.cwd as NSString).lastPathComponent)
+                .fontWeight(session.status == .waitingInput ? .semibold : .regular)
+                .lineLimit(1)
+            if let branch = session.gitBranch {
+                Text("[\(branch)]")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .layoutPriority(-1)
+            }
+            Spacer()
+            Text(relativeAge(session.lastEventTs)).foregroundStyle(.secondary)
+            if let numberHint {
+                Text(numberHint).font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func rowStatusDetail(_ session: SessionEntry) -> some View {
+        if session.status == .waitingInput, let msg = session.lastMessage {
+            Text(msg).font(.caption).foregroundStyle(.orange).padding(.leading, 16)
+        }
+        if session.status == .asking {
+            Text(session.lastMessage ?? "asking")
+                .font(.caption).foregroundStyle(.orange).padding(.leading, 16)
+        }
+        if session.status == .done, session.doneNotified {
+            Text("done").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
+        }
+        if session.status == .idle {
+            Text("idle").font(.caption).foregroundStyle(.secondary).padding(.leading, 16)
+        }
+    }
+
+    private func backgroundColor(for session: SessionEntry) -> Color {
+        if session.status == .asking { return Color.orange.opacity(0.1) }
+        if session.status == .waitingInput { return Color.orange.opacity(0.1) }
+        if session.status == .done && session.doneNotified { return Color.gray.opacity(0.1) }
+        if session.status == .idle { return Color.gray.opacity(0.1) }
+        return Color.clear
+    }
+
+    private func color(for status: SessionStatus) -> Color {
+        switch status {
         case .idle: return .gray
         case .running: return .green
         case .asking: return .orange
@@ -169,13 +180,13 @@ struct MenuBarView: View {
         }
     }
 
-    private func relativeAge(_ ts: String) -> String {
+    private func relativeAge(_ timestamp: String) -> String {
         let fmt = ISO8601DateFormatter()
         fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let d = fmt.date(from: ts) else { return "" }
-        let s = Int(-d.timeIntervalSinceNow)
-        if s < 60 { return "\(s)s" }
-        if s < 3600 { return "\(s/60)m" }
-        return "\(s/3600)h"
+        guard let date = fmt.date(from: timestamp) else { return "" }
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return "\(seconds)s" }
+        if seconds < 3600 { return "\(seconds/60)m" }
+        return "\(seconds/3600)h"
     }
 }

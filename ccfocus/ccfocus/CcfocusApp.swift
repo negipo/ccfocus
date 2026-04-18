@@ -28,7 +28,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "bubble.left.and.bubble.right", accessibilityDescription: "ccfocus")
+            button.image = NSImage(
+                systemSymbolName: "bubble.left.and.bubble.right",
+                accessibilityDescription: "ccfocus"
+            )
             button.action = #selector(togglePopover)
             button.target = self
         }
@@ -36,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover = NSPopover()
         popover.behavior = .transient
         popover.delegate = self
-        let vc = NSViewController()
+        let viewController = NSViewController()
         let menuView = MenuBarView(
             state: state,
             onDismiss: { [weak self] in self?.popover.performClose(nil) },
@@ -46,8 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         hostingView.onKeyDown = { [weak self] event in
             self?.handleKeyDown(event) ?? false
         }
-        vc.view = hostingView
-        popover.contentViewController = vc
+        viewController.view = hostingView
+        popover.contentViewController = viewController
 
         hotkeyController.onToggleFocus = { [weak self] in self?.handleHotkey() }
         hotkeyController.start()
@@ -127,8 +130,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             popover.performClose(nil)
             return true
         }
-        guard let chars = event.charactersIgnoringModifiers, let c = chars.first,
-              let index = KeyActionResolver.numberIndex(forCharacter: c) else {
+        guard let chars = event.charactersIgnoringModifiers, let character = chars.first,
+              let index = KeyActionResolver.numberIndex(forCharacter: character) else {
             return false
         }
         let entries = state.registry.sortedByLastEventDesc().filter { $0.status != .deceased }
@@ -147,10 +150,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         keyObservers.removeAll()
         guard let window = popover.contentViewController?.view.window else { return }
         let center = NotificationCenter.default
-        let becameKey = center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+        let becameKey = center.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
             Task { @MainActor in self?.stateMachine.markBecameKey() }
         }
-        let resignedKey = center.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
+        let resignedKey = center.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
             Task { @MainActor in self?.stateMachine.markResignedKey() }
         }
         keyObservers = [becameKey, resignedKey]

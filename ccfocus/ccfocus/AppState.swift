@@ -54,11 +54,11 @@ final class AppState: ObservableObject {
 
     private func replayAllJsonl() {
         let files = (try? EventLogReader.jsonlFilesSortedAsc()) ?? []
-        for f in files {
-            let lines = reader.readNew(url: f)
+        for fileURL in files {
+            let lines = reader.readNew(url: fileURL)
             for line in lines {
-                if let ev = try? EventLogReader.decode(line: line) {
-                    registry.apply(ev)
+                if let event = try? EventLogReader.decode(line: line) {
+                    registry.apply(event)
                 }
             }
         }
@@ -79,21 +79,21 @@ final class AppState: ObservableObject {
     private func onFsEvent() {
         let files = (try? EventLogReader.jsonlFilesSortedAsc()) ?? []
         var appliedAny = false
-        for f in files {
-            let lines = reader.readNew(url: f)
+        for fileURL in files {
+            let lines = reader.readNew(url: fileURL)
             for line in lines {
-                if let ev = try? EventLogReader.decode(line: line) {
-                    registry.apply(ev)
+                if let event = try? EventLogReader.decode(line: line) {
+                    registry.apply(event)
                     appliedAny = true
                     if bootstrapDone {
-                        if case .notification(let n) = ev.kind,
-                           let entry = registry.sessions[n.sessionId],
+                        if case .notification(let notif) = event.kind,
+                           let entry = registry.sessions[notif.sessionId],
                            entry.status == .waitingInput {
                             onOpenPopover?()
                         }
-                        if case .stop(let sid, _) = ev.kind,
+                        if case .stop(let sid, _) = event.kind,
                            let entry = registry.sessions[sid],
-                           (entry.status == .done || entry.status == .asking) {
+                           entry.status == .done || entry.status == .asking {
                             onOpenPopover?()
                         }
                     }
@@ -120,11 +120,12 @@ final class AppState: ObservableObject {
 
     private func runLivenessCheck() {
         let terms = LivenessChecker.ghosttyTerminalIds()
-        for (sid, e) in registry.sessions {
-            if [.idle, .running, .asking, .waitingInput, .done, .stale].contains(e.status) == false { continue }
-            if let pid = e.claudePid, let st = e.claudeStartTime, let cm = e.claudeComm {
+        for (sid, entry) in registry.sessions {
+            if [.idle, .running, .asking, .waitingInput, .done, .stale].contains(entry.status) == false { continue }
+            if let pid = entry.claudePid, let startTime = entry.claudeStartTime, let comm = entry.claudeComm {
                 if let cur = LivenessChecker.queryPs(pid: pid) {
-                    if !LivenessChecker.verify(expected: (pid, st, cm), current: cur) {
+                    let expected = ExpectedProcess(pid: pid, lstart: startTime, comm: comm)
+                    if !LivenessChecker.verify(expected: expected, current: cur) {
                         registry.markDeceased(sid: sid, reason: .claudeTerminated)
                         continue
                     }
@@ -133,7 +134,7 @@ final class AppState: ObservableObject {
                     continue
                 }
             }
-            if let tid = e.terminalId, !terms.contains(tid) {
+            if let tid = entry.terminalId, !terms.contains(tid) {
                 registry.markDeceased(sid: sid, reason: .paneClosed)
             }
         }

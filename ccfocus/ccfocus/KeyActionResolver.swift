@@ -3,20 +3,13 @@ import Foundation
 enum KeyActionResolver {
     static let maxIndex = 10
 
-    static func numberIndex(forCharacter c: Character) -> Int? {
-        switch c {
-        case "1": return 0
-        case "2": return 1
-        case "3": return 2
-        case "4": return 3
-        case "5": return 4
-        case "6": return 5
-        case "7": return 6
-        case "8": return 7
-        case "9": return 8
-        case "0": return 9
-        default: return nil
-        }
+    private static let digitToIndex: [Character: Int] = [
+        "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
+        "6": 5, "7": 6, "8": 7, "9": 8, "0": 9
+    ]
+
+    static func numberIndex(forCharacter character: Character) -> Int? {
+        digitToIndex[character]
     }
 
     static func select(from entries: [SessionEntry], numberIndex index: Int) -> SessionEntry? {

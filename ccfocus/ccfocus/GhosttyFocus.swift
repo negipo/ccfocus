@@ -3,7 +3,7 @@ import Foundation
 struct GhosttyTerminalInfo: Identifiable {
     let id: String
     let name: String
-    let wd: String
+    let workingDir: String
 }
 
 enum GhosttyFocus {
@@ -50,7 +50,7 @@ enum GhosttyFocus {
         return text.split(whereSeparator: \.isNewline).compactMap { line in
             let parts = line.split(separator: "\t", maxSplits: 2).map(String.init)
             guard parts.count == 3, !parts[0].isEmpty else { return nil }
-            return GhosttyTerminalInfo(id: parts[0], name: parts[1], wd: parts[2])
+            return GhosttyTerminalInfo(id: parts[0], name: parts[1], workingDir: parts[2])
         }
     }
 

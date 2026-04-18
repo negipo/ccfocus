@@ -49,42 +49,48 @@ enum LogTail {
         }
 
         func stop() {
-            if let s = stream {
-                FSEventStreamStop(s)
-                FSEventStreamInvalidate(s)
-                stream = nil
+            if let stream {
+                FSEventStreamStop(stream)
+                FSEventStreamInvalidate(stream)
+                self.stream = nil
             }
             timer?.cancel()
             timer = nil
         }
 
         private func startFSEvents() {
-            var ctx = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
-            let cb: FSEventStreamCallback = { _, clientInfo, _, _, _, _ in
-                let w = Unmanaged<Watcher>.fromOpaque(clientInfo!).takeUnretainedValue()
-                w.onChange()
+            var ctx = FSEventStreamContext(
+                version: 0,
+                info: Unmanaged.passUnretained(self).toOpaque(),
+                retain: nil,
+                release: nil,
+                copyDescription: nil
+            )
+            let callback: FSEventStreamCallback = { _, clientInfo, _, _, _, _ in
+                let watcher = Unmanaged<Watcher>.fromOpaque(clientInfo!).takeUnretainedValue()
+                watcher.onChange()
             }
             stream = FSEventStreamCreate(
                 kCFAllocatorDefault,
-                cb,
+                callback,
                 &ctx,
                 [directory] as CFArray,
                 UInt64(kFSEventStreamEventIdSinceNow),
                 0.05,
                 UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer)
             )
-            if let s = stream {
-                FSEventStreamSetDispatchQueue(s, DispatchQueue.main)
-                FSEventStreamStart(s)
+            if let stream {
+                FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
+                FSEventStreamStart(stream)
             }
         }
 
         private func startPollingFallback() {
-            let t = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
-            t.schedule(deadline: .now() + .seconds(1), repeating: .seconds(1))
-            t.setEventHandler { [weak self] in self?.onChange() }
-            t.resume()
-            timer = t
+            let timerSource = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+            timerSource.schedule(deadline: .now() + .seconds(1), repeating: .seconds(1))
+            timerSource.setEventHandler { [weak self] in self?.onChange() }
+            timerSource.resume()
+            timer = timerSource
         }
     }
 }

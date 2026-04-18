@@ -42,11 +42,11 @@ final class KeyActionResolverTests: XCTestCase {
     }
 
     private static func makeEntries(count: Int) -> [SessionEntry] {
-        (0..<count).map { i in
+        (0..<count).map { idx in
             SessionEntry(
-                sessionId: "s\(i)",
+                sessionId: "s\(idx)",
                 terminalId: nil,
-                cwd: "/tmp/\(i)",
+                cwd: "/tmp/\(idx)",
                 gitBranch: nil,
                 claudePid: nil,
                 claudeStartTime: nil,

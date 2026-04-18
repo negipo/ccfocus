@@ -10,8 +10,11 @@ enum LogRotator {
     }
 
     static func rotate(directory: URL, now: Date, retentionDays: Int) {
-        let fm = FileManager.default
-        guard let items = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        let fileManager = FileManager.default
+        guard let items = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        ) else { return }
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         fmt.locale = Locale(identifier: "en_US_POSIX")
@@ -22,7 +25,7 @@ enum LogRotator {
             guard let date = fmt.date(from: stem) else { continue }
             let age = Calendar.current.dateComponents([.day], from: date, to: now).day ?? 0
             if age > retentionDays {
-                try? fm.removeItem(at: url)
+                try? fileManager.removeItem(at: url)
             }
         }
     }
