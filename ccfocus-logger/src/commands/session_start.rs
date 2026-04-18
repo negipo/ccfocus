@@ -1,11 +1,13 @@
 use crate::event::{Event, EventKind};
 use crate::ghostty::find_terminal_id_with_retry;
 use crate::git::{git_branch, RealRunner};
-use crate::log_path::log_file_for_now;
+use crate::log_path::{events_dir, log_file_for_now};
+use crate::log_reader::collect_live_claimed_terminal_ids;
 use crate::log_writer::append_event_to;
 use crate::timestamp::now_iso8601;
 use anyhow::Result;
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::io::Read;
 use std::time::Duration;
 
@@ -21,8 +23,17 @@ pub fn run() -> Result<()> {
     let payload: HookPayload = serde_json::from_str(&buf)?;
 
     let runner = RealRunner;
-    let terminal_id =
-        find_terminal_id_with_retry(&runner, &payload.cwd, 5, Duration::from_millis(100));
+    let claimed = match events_dir() {
+        Ok(dir) => collect_live_claimed_terminal_ids(&runner, &dir),
+        Err(_) => HashSet::new(),
+    };
+    let terminal_id = find_terminal_id_with_retry(
+        &runner,
+        &payload.cwd,
+        &claimed,
+        5,
+        Duration::from_millis(100),
+    );
     let git_branch = git_branch(&runner, &payload.cwd).unwrap_or(None);
 
     let claude_pid = std::env::var("CCFOCUS_CLAUDE_PID")

@@ -46,3 +46,9 @@ ccfocus-loggerの手動テスト:
 echo '{"session_id":"test","cwd":"/tmp"}' | CCFOCUS_LOGGER_DETACHED=1 cargo run -p ccfocus-logger -- stop
 \cat ~/Library/Application\ Support/ccfocus/events/$(date +%Y-%m-%d).jsonl
 ```
+
+The binary invoked by Claude Code hooks is `~/.cargo/bin/ccfocus-logger`, placed by `cargo install --path ccfocus-logger --locked`. Re-install before verifying code changes through the real hook path:
+
+```bash
+cargo install --path ccfocus-logger --locked
+```
