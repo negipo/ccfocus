@@ -53,7 +53,7 @@ struct SessionRegistry {
                 e.lastEventTs = ev.ts
                 e.lastMessage = n.message
             }
-        case .stop(let sid):
+        case .stop(let sid, _):
             mutate(sid) { e in
                 e.status = SessionStatus.transitioned(current: e.status, event: .stop)
                 e.lastEventTs = ev.ts

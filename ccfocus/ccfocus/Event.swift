@@ -7,7 +7,7 @@ struct Event: Decodable {
     enum Kind {
         case sessionStart(SessionStart)
         case notification(Notification)
-        case stop(String)
+        case stop(String, Bool?)
         case preToolUse(PreToolUse)
         case userPromptSubmit(String)
     }
@@ -53,6 +53,7 @@ struct Event: Decodable {
         case ts
         case event
         case session_id
+        case has_question
     }
 
     init(from decoder: Decoder) throws {
@@ -67,7 +68,8 @@ struct Event: Decodable {
             self.kind = .notification(try single.decode(Notification.self))
         case "stop":
             let s = try c.decode(String.self, forKey: .session_id)
-            self.kind = .stop(s)
+            let hq = try c.decodeIfPresent(Bool.self, forKey: .has_question)
+            self.kind = .stop(s, hq)
         case "pre_tool_use":
             self.kind = .preToolUse(try single.decode(PreToolUse.self))
         case "user_prompt_submit":

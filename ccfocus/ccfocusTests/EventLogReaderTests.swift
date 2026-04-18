@@ -19,7 +19,7 @@ final class EventLogReaderTests: XCTestCase {
     func testParsesStop() throws {
         let line = #"{"ts":"2026-04-16T09:15:00.000Z","event":"stop","session_id":"abc"}"#
         let ev = try EventLogReader.decode(line: line)
-        if case .stop(let s) = ev.kind { XCTAssertEqual(s, "abc") } else { XCTFail() }
+        if case .stop(let s, _) = ev.kind { XCTAssertEqual(s, "abc") } else { XCTFail() }
     }
 
     func testSkipsBlankLines() throws {

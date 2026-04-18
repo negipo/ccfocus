@@ -91,7 +91,7 @@ final class AppState: ObservableObject {
                            entry.status == .waitingInput {
                             onOpenPopover?()
                         }
-                        if case .stop(let sid) = ev.kind,
+                        if case .stop(let sid, _) = ev.kind,
                            let entry = registry.sessions[sid],
                            entry.status == .done {
                             onOpenPopover?()
