@@ -17,6 +17,7 @@ pub enum Command {
     PreToolUse,
     UserPromptSubmit,
     Install,
+    Uninstall,
 }
 
 impl Cli {
@@ -39,6 +40,7 @@ impl Cli {
             Command::PreToolUse => commands::pre_tool_use::run(),
             Command::UserPromptSubmit => commands::user_prompt_submit::run(),
             Command::Install => commands::install::run(),
+            Command::Uninstall => commands::uninstall::run(),
         }
     }
 }

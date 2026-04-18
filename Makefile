@@ -6,15 +6,15 @@ build:
 install: build
 	cargo install --path ccfocus-logger
 	mise reshim
-	cp -R dist/ccfocus-app.app /Applications/
+	cp -R dist/ccfocus.app /Applications/
 	ccfocus-logger install
-	@echo "ccfocus installed. Launch ccfocus-app from /Applications or reboot."
+	@echo "ccfocus installed. Launch ccfocus from /Applications or reboot."
 
 test:
 	cargo test -p ccfocus-logger
 	cargo clippy -p ccfocus-logger
-	xcodegen generate --spec ccfocus-app/project.yml --project ccfocus-app/
-	xcodebuild -project ccfocus-app/ccfocus-app.xcodeproj -scheme ccfocus-appTests -configuration Debug test
+	xcodegen generate --spec ccfocus/project.yml --project ccfocus/
+	xcodebuild -project ccfocus/ccfocus.xcodeproj -scheme ccfocusTests -configuration Debug test
 
 clean:
 	cargo clean

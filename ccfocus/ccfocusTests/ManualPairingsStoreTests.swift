@@ -1,5 +1,5 @@
 import XCTest
-@testable import ccfocus_app
+@testable import ccfocus
 
 final class ManualPairingsStoreTests: XCTestCase {
     func testSaveAndLoadRoundtrip() throws {
