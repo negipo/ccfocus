@@ -6,9 +6,11 @@ cargo build -p ccfocus-logger --release
 
 xcodegen generate --spec ccfocus-app/project.yml --project ccfocus-app/
 
+ORIG_PLIST="ccfocus-app/ccfocus-app/Info.plist"
 if [ -n "${VERSION:-}" ]; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" \
-    ccfocus-app/ccfocus-app/Info.plist
+  cp "$ORIG_PLIST" "${ORIG_PLIST}.bak"
+  trap 'mv "${ORIG_PLIST}.bak" "$ORIG_PLIST" 2>/dev/null || true' EXIT
+  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "$ORIG_PLIST"
 fi
 
 xcodebuild \
@@ -34,6 +36,7 @@ rm -rf dist/ccfocus-app.app
 cp -R "$APP_PATH" dist/
 
 if [ -n "${VERSION:-}" ]; then
+  command -v create-dmg >/dev/null || { echo "create-dmg required; brew install create-dmg" >&2; exit 1; }
   DMG_NAME="ccfocus-${VERSION}-macos.dmg"
   rm -f "$DMG_NAME"
   create-dmg \
