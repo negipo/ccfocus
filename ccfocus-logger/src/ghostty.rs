@@ -1,5 +1,6 @@
 use crate::git::CommandRunner;
 use anyhow::Result;
+use std::collections::HashSet;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -72,6 +73,14 @@ pub fn parse_ghostty_dump(s: &str) -> Vec<Term> {
 }
 
 pub fn pick_match(terms: &[Term], cwd: &str) -> MatchResult {
+    pick_match_excluding(terms, cwd, &HashSet::new())
+}
+
+pub fn pick_match_excluding(
+    terms: &[Term],
+    cwd: &str,
+    claimed: &HashSet<String>,
+) -> MatchResult {
     let canonical_cwd = std::fs::canonicalize(cwd)
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|_| cwd.to_string());
@@ -81,7 +90,9 @@ pub fn pick_match(terms: &[Term], cwd: &str) -> MatchResult {
             let canonical_wd = std::fs::canonicalize(&t.wd)
                 .map(|p| p.to_string_lossy().to_string())
                 .unwrap_or_else(|_| t.wd.clone());
-            canonical_wd == canonical_cwd && t.name.contains("Claude Code")
+            canonical_wd == canonical_cwd
+                && t.name.contains("Claude Code")
+                && !claimed.contains(&t.id)
         })
         .collect();
     match cands.len() {
@@ -99,6 +110,7 @@ pub fn enumerate_terminals(runner: &impl CommandRunner) -> Result<Vec<Term>> {
 pub fn find_terminal_id_with_retry(
     runner: &impl CommandRunner,
     cwd: &str,
+    claimed: &HashSet<String>,
     max_attempts: usize,
     interval: Duration,
 ) -> Option<String> {
@@ -109,7 +121,7 @@ pub fn find_terminal_id_with_retry(
         let Ok(terms) = enumerate_terminals(runner) else {
             continue;
         };
-        if let MatchResult::Unique(id) = pick_match(&terms, cwd) {
+        if let MatchResult::Unique(id) = pick_match_excluding(&terms, cwd, claimed) {
             return Some(id);
         }
     }
@@ -187,6 +199,67 @@ mod tests {
             wd: "/foo".into(),
         }];
         let m = pick_match(&terms, "/foo");
+        assert_eq!(m, MatchResult::Unique("T1".into()));
+    }
+
+    #[test]
+    fn excluding_claimed_resolves_to_remaining() {
+        let terms = vec![
+            Term {
+                id: "T1".into(),
+                name: "Claude Code".into(),
+                wd: "/foo".into(),
+            },
+            Term {
+                id: "T2".into(),
+                name: "Claude Code".into(),
+                wd: "/foo".into(),
+            },
+        ];
+        let claimed = HashSet::from(["T1".to_string()]);
+        let m = pick_match_excluding(&terms, "/foo", &claimed);
+        assert_eq!(m, MatchResult::Unique("T2".into()));
+    }
+
+    #[test]
+    fn excluding_claimed_when_all_claimed_returns_none() {
+        let terms = vec![
+            Term {
+                id: "T1".into(),
+                name: "Claude Code".into(),
+                wd: "/foo".into(),
+            },
+            Term {
+                id: "T2".into(),
+                name: "Claude Code".into(),
+                wd: "/foo".into(),
+            },
+        ];
+        let claimed = HashSet::from(["T1".to_string(), "T2".to_string()]);
+        let m = pick_match_excluding(&terms, "/foo", &claimed);
+        assert_eq!(m, MatchResult::None);
+    }
+
+    #[test]
+    fn excluding_claimed_not_in_terms_is_noop() {
+        let terms = vec![Term {
+            id: "T1".into(),
+            name: "Claude Code".into(),
+            wd: "/foo".into(),
+        }];
+        let claimed = HashSet::from(["T_OTHER".to_string()]);
+        let m = pick_match_excluding(&terms, "/foo", &claimed);
+        assert_eq!(m, MatchResult::Unique("T1".into()));
+    }
+
+    #[test]
+    fn excluding_empty_claimed_single_pane_matches() {
+        let terms = vec![Term {
+            id: "T1".into(),
+            name: "Claude Code".into(),
+            wd: "/foo".into(),
+        }];
+        let m = pick_match_excluding(&terms, "/foo", &HashSet::new());
         assert_eq!(m, MatchResult::Unique("T1".into()));
     }
 }
