@@ -93,7 +93,7 @@ final class AppState: ObservableObject {
                         }
                         if case .stop(let sid, _) = ev.kind,
                            let entry = registry.sessions[sid],
-                           entry.status == .done {
+                           (entry.status == .done || entry.status == .asking) {
                             onOpenPopover?()
                         }
                     }
@@ -121,7 +121,7 @@ final class AppState: ObservableObject {
     private func runLivenessCheck() {
         let terms = LivenessChecker.ghosttyTerminalIds()
         for (sid, e) in registry.sessions {
-            if [.idle, .running, .waitingInput, .done, .stale].contains(e.status) == false { continue }
+            if [.idle, .running, .asking, .waitingInput, .done, .stale].contains(e.status) == false { continue }
             if let pid = e.claudePid, let st = e.claudeStartTime, let cm = e.claudeComm {
                 if let cur = LivenessChecker.queryPs(pid: pid) {
                     if !LivenessChecker.verify(expected: (pid, st, cm), current: cur) {
