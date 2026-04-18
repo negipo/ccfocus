@@ -53,11 +53,12 @@ struct SessionRegistry {
                 e.lastEventTs = ev.ts
                 e.lastMessage = n.message
             }
-        case .stop(let sid, _):
+        case .stop(let sid, let hasQuestion):
             mutate(sid) { e in
-                e.status = SessionStatus.transitioned(current: e.status, event: .stop)
+                let kind: EventTransitionKind = (hasQuestion == true) ? .stopWithQuestion : .stop
+                e.status = SessionStatus.transitioned(current: e.status, event: kind)
                 e.lastEventTs = ev.ts
-                e.doneNotified = true
+                e.doneNotified = (hasQuestion != true)
             }
         case .preToolUse(let p):
             mutate(p.sessionId) { e in
@@ -110,7 +111,8 @@ extension SessionRegistry {
         for (sid, e) in sessions {
             guard let d = fmt.date(from: e.lastEventTs) else { continue }
             let age = now.timeIntervalSince(d)
-            if e.status == .idle || e.status == .running || e.status == .waitingInput || e.status == .done {
+            if e.status == .idle || e.status == .running || e.status == .asking
+                || e.status == .waitingInput || e.status == .done {
                 if age >= 30 * 60 { mutate(sid) { $0.status = .stale } }
             }
             if e.status == .stale && e.claudePid == nil && age >= 2.5 * 3600 {

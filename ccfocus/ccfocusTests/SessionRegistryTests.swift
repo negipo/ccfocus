@@ -66,4 +66,27 @@ final class SessionRegistryTests: XCTestCase {
         let sorted = reg.sortedByLastEventDesc()
         XCTAssertEqual(sorted.map(\.sessionId), ["s1", "s2"])
     }
+
+    func testStopWithHasQuestionSetsAsking() throws {
+        var reg = SessionRegistry()
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:00.000Z","event":"session_start","session_id":"s","cwd":"/tmp"}"#))
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:01.000Z","event":"stop","session_id":"s","has_question":true}"#))
+        XCTAssertEqual(reg.sessions["s"]?.status, .asking)
+    }
+
+    func testStopWithoutHasQuestionSetsDone() throws {
+        var reg = SessionRegistry()
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:00.000Z","event":"session_start","session_id":"s","cwd":"/tmp"}"#))
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:01.000Z","event":"stop","session_id":"s"}"#))
+        XCTAssertEqual(reg.sessions["s"]?.status, .done)
+    }
+
+    func testAskingBecomesStaleAfter30Min() throws {
+        var reg = SessionRegistry()
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:00.000Z","event":"session_start","session_id":"s","cwd":"/tmp"}"#))
+        reg.apply(try EventLogReader.decode(line: #"{"ts":"2026-04-18T00:00:00.000Z","event":"stop","session_id":"s","has_question":true}"#))
+        let now = ISO8601DateFormatter().date(from: "2026-04-18T00:30:30Z")!
+        reg.applyStaleAfter(now)
+        XCTAssertEqual(reg.sessions["s"]?.status, .stale)
+    }
 }
