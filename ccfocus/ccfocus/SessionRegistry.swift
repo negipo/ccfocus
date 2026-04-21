@@ -98,6 +98,17 @@ struct SessionRegistry {
 }
 
 extension SessionRegistry {
+    var attentionCount: Int {
+        sessions.values.reduce(into: 0) { count, entry in
+            switch entry.status {
+            case .asking, .waitingInput, .done, .idle, .error:
+                count += 1
+            case .running, .stale, .deceased:
+                break
+            }
+        }
+    }
+
     mutating func markDeceased(sid: String, reason: DeceasedReason) {
         mutate(sid) { entry in
             entry.status = .deceased
