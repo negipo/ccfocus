@@ -122,4 +122,56 @@ final class SessionRegistryTests: XCTestCase {
         reg.applyStaleAfter(now)
         XCTAssertEqual(reg.sessions["s"]?.status, .stale)
     }
+
+    func testAttentionCountIsZeroForEmptyRegistry() {
+        let reg = SessionRegistry()
+        XCTAssertEqual(reg.attentionCount, 0)
+    }
+
+    func testAttentionCountCountsAttentionStatuses() throws {
+        var reg = SessionRegistry()
+        let lines = [
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"asking","cwd":"/a"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"stop","session_id":"asking","has_question":true}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"waiting","cwd":"/a"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"notification","session_id":"waiting","message":"m"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"done","cwd":"/a"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"stop","session_id":"done"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"idle","cwd":"/a"}"#
+        ]
+        for line in lines { reg.apply(try EventLogReader.decode(line: line)) }
+        XCTAssertEqual(reg.sessions["asking"]?.status, .asking)
+        XCTAssertEqual(reg.sessions["waiting"]?.status, .waitingInput)
+        XCTAssertEqual(reg.sessions["done"]?.status, .done)
+        XCTAssertEqual(reg.sessions["idle"]?.status, .idle)
+        XCTAssertEqual(reg.attentionCount, 4)
+    }
+
+    func testAttentionCountExcludesNonAttentionStatuses() throws {
+        var reg = SessionRegistry()
+        let lines = [
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"run","cwd":"/a"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"user_prompt_submit","session_id":"run"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"stale","cwd":"/a"}"#
+        ]
+        for line in lines { reg.apply(try EventLogReader.decode(line: line)) }
+        let now = ISO8601DateFormatter().date(from: "2026-04-20T00:31:00Z")!
+        reg.applyStaleAfter(now)
+        reg.markDeceased(sid: "run", reason: .claudeTerminated)
+        XCTAssertEqual(reg.sessions["run"]?.status, .deceased)
+        XCTAssertEqual(reg.sessions["stale"]?.status, .stale)
+        XCTAssertEqual(reg.attentionCount, 0)
+    }
+
+    func testAttentionCountMixedCount() throws {
+        var reg = SessionRegistry()
+        let lines = [
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"a","cwd":"/a"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"stop","session_id":"a","has_question":true}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"session_start","session_id":"b","cwd":"/b"}"#,
+            #"{"ts":"2026-04-20T00:00:00.000Z","event":"user_prompt_submit","session_id":"b"}"#
+        ]
+        for line in lines { reg.apply(try EventLogReader.decode(line: line)) }
+        XCTAssertEqual(reg.attentionCount, 1)
+    }
 }

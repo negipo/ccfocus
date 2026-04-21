@@ -12,12 +12,15 @@ final class AppState: ObservableObject {
     private var livenessTimer: Timer?
     private var rotationTimer: Timer?
     private var bootstrapDone = false
+    private var autoCloseGate = PopoverAutoCloseGate()
     var onOpenPopover: (() -> Void)?
+    var onClosePopover: (() -> Void)?
 
     func bootstrap() {
         LogRotator.rotate(directory: EventLogReader.eventsDir(), now: Date(), retentionDays: 7)
         try? pairings.load()
         replayAllJsonl()
+        autoCloseGate.sync(to: registry.attentionCount)
         startWatching()
         runLivenessCheck()
         startLivenessTimer()
@@ -100,7 +103,16 @@ final class AppState: ObservableObject {
                 }
             }
         }
-        if appliedAny { objectWillChange.send() }
+        if appliedAny {
+            objectWillChange.send()
+            checkAutoClose()
+        }
+    }
+
+    private func checkAutoClose() {
+        if autoCloseGate.apply(current: registry.attentionCount) {
+            onClosePopover?()
+        }
     }
 
     private func startLivenessTimer() {
@@ -143,5 +155,6 @@ final class AppState: ObservableObject {
             try? pairings.save()
         }
         objectWillChange.send()
+        checkAutoClose()
     }
 }

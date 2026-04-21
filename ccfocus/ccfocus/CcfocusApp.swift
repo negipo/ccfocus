@@ -25,6 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         registerLoginItemIfNeeded()
         state.bootstrap()
         state.onOpenPopover = { [weak self] in self?.showPopoverUnfocused() }
+        state.onClosePopover = { [weak self] in
+            guard let self else { return }
+            if self.popover.isShown {
+                self.popover.performClose(nil)
+            }
+        }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
