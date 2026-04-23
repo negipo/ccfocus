@@ -12,9 +12,9 @@ struct CcfocusApp: App {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
-    private var popover: NSPopover!
+    private var panel: NSPanel!
     private let state = AppState()
     private var stateMachine = PopoverStateMachine()
     private let hotkeyController = HotkeyController()
@@ -24,12 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerLoginItemIfNeeded()
         state.bootstrap()
-        state.onOpenPopover = { [weak self] in self?.showPopoverUnfocused() }
+        state.onOpenPopover = { [weak self] in self?.showPanelUnfocused() }
         state.onClosePopover = { [weak self] in
             guard let self else { return }
-            if self.popover.isShown {
-                self.popover.performClose(nil)
-            }
+            self.panel.close()
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -42,21 +40,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             button.target = self
         }
 
-        popover = NSPopover()
-        popover.behavior = .transient
-        popover.delegate = self
-        let viewController = NSViewController()
         let menuView = MenuBarView(
             state: state,
-            onDismiss: { [weak self] in self?.popover.performClose(nil) },
+            onDismiss: { [weak self] in self?.panel.close() },
             onOpenSettings: { [weak self] in self?.settingsWindowController.show() }
         )
         let hostingView = KeyHandlingHostingView(rootView: menuView)
-        hostingView.onKeyDown = { [weak self] event in
-            self?.handleKeyDown(event) ?? false
-        }
-        viewController.view = hostingView
-        popover.contentViewController = viewController
+        hostingView.onKeyDown = { [weak self] event in self?.handleKeyDown(event) ?? false }
+
+        let panelRect = NSRect(x: 0, y: 0, width: 340, height: 10)
+        panel = NSPanel(contentRect: panelRect,
+                        styleMask: [.borderless, .nonactivatingPanel],
+                        backing: .buffered, defer: false)
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = false
+        panel.becomesKeyOnlyIfNeeded = false
+        panel.level = .statusBar
+        panel.hasShadow = true
+        panel.isMovable = false
+        panel.contentView = hostingView
 
         hotkeyController.onToggleFocus = { [weak self] in self?.handleHotkey() }
         hotkeyController.start()
@@ -87,53 +89,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     @objc private func togglePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            showPopoverUnfocused()
-        }
+        if panel.isVisible { panel.close(); return }
+        showPanelUnfocused()
     }
 
     private func handleHotkey() {
-        if popover.isShown {
-            let isKey = popover.contentViewController?.view.window?.isKeyWindow ?? false
-            if isKey {
-                popover.performClose(nil)
-            } else {
-                focusPopover()
-            }
+        if panel.isVisible {
+            if panel.isKeyWindow { panel.close() } else { focusPanel() }
         } else {
-            showPopoverUnfocused()
-            focusPopover()
+            showPanelUnfocused()
+            focusPanel()
         }
     }
 
-    private func showPopoverUnfocused() {
-        guard let button = statusItem.button else { return }
-        if !popover.isShown {
-            if let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
-                hostingView.wantsKeyboardFocus = false
-            }
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            observeKeyWindowNotifications()
-            stateMachine.markOpenedUnfocused()
+    private func showPanelUnfocused() {
+        guard let button = statusItem.button, let window = button.window else { return }
+        if panel.isVisible { return }
+        let buttonRectOnScreen = window.convertToScreen(button.frame)
+        let origin = NSPoint(x: buttonRectOnScreen.midX - panel.frame.width / 2,
+                             y: buttonRectOnScreen.minY - panel.frame.height)
+        panel.setFrameOrigin(origin)
+        panel.orderFront(nil)
+        if let host = panel.contentView as? KeyHandlingHostingView<MenuBarView> {
+            host.wantsKeyboardFocus = false
         }
+        state.capturePreviousFrontmostApp()
+        stateMachine.markOpenedUnfocused()
+        observeKeyWindowNotifications()
     }
 
-    private func focusPopover() {
+    private func focusPanel() {
         NSApp.activate(ignoringOtherApps: true)
-        if let window = popover.contentViewController?.view.window,
-           let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
-            hostingView.wantsKeyboardFocus = true
-            window.makeKeyAndOrderFront(nil)
-            window.makeFirstResponder(hostingView)
+        if let host = panel.contentView as? KeyHandlingHostingView<MenuBarView> {
+            host.wantsKeyboardFocus = true
+            panel.makeKeyAndOrderFront(nil)
+            panel.makeFirstResponder(host)
         }
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        guard popover.contentViewController?.view.window?.isKeyWindow == true else { return false }
+        guard panel.isKeyWindow else { return false }
         if event.keyCode == 53 {
-            popover.performClose(nil)
+            panel.close()
             return true
         }
         guard let chars = event.charactersIgnoringModifiers, let character = chars.first,
@@ -146,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         state.clearDoneNotified(entry.sessionId)
         if let id = state.effectiveTerminalId(for: entry) {
             GhosttyFocus.focus(terminalId: id)
-            popover.performClose(nil)
+            panel.close()
         }
         return true
     }
@@ -154,30 +151,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func observeKeyWindowNotifications() {
         keyObservers.forEach { NotificationCenter.default.removeObserver($0) }
         keyObservers.removeAll()
-        guard let window = popover.contentViewController?.view.window else { return }
         let center = NotificationCenter.default
-        let becameKey = center.addObserver(
-            forName: NSWindow.didBecomeKeyNotification,
-            object: window,
-            queue: .main
-        ) { [weak self] _ in
+        let becameKey = center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: panel, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.stateMachine.markBecameKey() }
         }
-        let resignedKey = center.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: window,
-            queue: .main
-        ) { [weak self] _ in
+        let resignedKey = center.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.stateMachine.markResignedKey() }
         }
-        keyObservers = [becameKey, resignedKey]
-    }
-
-    func popoverDidClose(_ notification: Notification) {
-        if let hostingView = popover.contentViewController?.view as? KeyHandlingHostingView<MenuBarView> {
-            hostingView.wantsKeyboardFocus = false
+        let willClose = center.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                self?.stateMachine.markDidClose()
+                if let host = self?.panel.contentView as? KeyHandlingHostingView<MenuBarView> {
+                    host.wantsKeyboardFocus = false
+                }
+            }
         }
-        stateMachine.markDidClose()
+        keyObservers = [becameKey, resignedKey, willClose]
     }
 
     private func registerLoginItemIfNeeded() {
