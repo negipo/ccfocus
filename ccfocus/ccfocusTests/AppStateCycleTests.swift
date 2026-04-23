@@ -96,4 +96,25 @@ final class AppStateCycleTests: XCTestCase {
         XCTAssertNil(state.lastPeekedSessionId)
         XCTAssertNil(state.lastPeekedTerminalId)
     }
+
+    func testCommitLastPeekClearsMessageAndDoneNotified() {
+        let state = AppState()
+        seed(state, entries: [("a", "t1", "2026-04-22T00:00:01Z")])
+        state.registry.sessions["a"]?.lastMessage = "pending"
+        state.registry.sessions["a"]?.doneNotified = true
+        _ = state.cycleSessionsOneStep(forward: true)
+        state.commitLastPeek()
+        XCTAssertNil(state.registry.sessions["a"]?.lastMessage)
+        XCTAssertEqual(state.registry.sessions["a"]?.doneNotified, false)
+    }
+
+    func testCommitLastPeekWithoutPeekDoesNothing() {
+        let state = AppState()
+        seed(state, entries: [("a", "t1", "2026-04-22T00:00:01Z")])
+        state.registry.sessions["a"]?.lastMessage = "pending"
+        state.registry.sessions["a"]?.doneNotified = true
+        state.commitLastPeek()
+        XCTAssertEqual(state.registry.sessions["a"]?.lastMessage, "pending")
+        XCTAssertEqual(state.registry.sessions["a"]?.doneNotified, true)
+    }
 }
