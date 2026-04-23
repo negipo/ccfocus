@@ -94,7 +94,7 @@ struct MenuBarView: View {
             .onTapGesture { NSApp.terminate(nil) }
         }
         .padding(8)
-        .frame(minWidth: 320)
+        .frame(width: 320)
     }
 
     private var isUnlinked: (SessionEntry) -> Bool {
@@ -147,7 +147,7 @@ struct MenuBarView: View {
                 .fontWeight(session.status == .waitingInput ? .semibold : .regular)
                 .lineLimit(1)
             if let branch = session.gitBranch {
-                Text("[\(branch)]")
+                Text("[\(BranchTextTruncator.truncate(branch))]")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
