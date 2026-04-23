@@ -31,6 +31,13 @@ brew uninstall --cask ccfocus
 
 The uninstall preflight removes ccfocus entries from `~/.claude/settings.json`. Use `brew uninstall --zap --cask ccfocus` to also remove logs and preferences.
 
+## Keyboard
+
+- `Tab` / `Shift+Tab` (panel focused): Cycle peek through sessions. Ghostty window is raised behind the panel without activating it.
+- `Esc` / global hotkey: Close the panel. Commits the last peek (activates that Ghostty pane) if peeked, otherwise restores the previously active app.
+- `1`–`9`, `0` (panel focused): Jump directly to the Nth session.
+- Mouse click on `Cycle sessions` row: Advance peek by one step.
+
 ## Session states
 
 Each tracked session appears in the menu bar with a colored dot and an optional label. States are listed in the order the user should handle them.
