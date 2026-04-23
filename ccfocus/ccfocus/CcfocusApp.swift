@@ -112,6 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func togglePopover() {
         if panel.isVisible { closePanel(reason: .statusButtonToggle); return }
         showPanelUnfocused()
+        focusPanel()
     }
 
     private func handleHotkey() {
