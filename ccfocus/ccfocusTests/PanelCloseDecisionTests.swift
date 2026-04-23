@@ -50,10 +50,10 @@ final class PanelCloseDecisionTests: XCTestCase {
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
-    func testClickOutsideWithPeekCommits() {
+    func testClickOutsideWithPeekDoesNotCommit() {
         let d = PanelCloseDecision.decide(reason: .clickOutside, isPeekActive: true, isCcfocusFrontmost: false)
         XCTAssertTrue(d.shouldClose)
-        XCTAssertTrue(d.shouldCommit)
+        XCTAssertFalse(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 

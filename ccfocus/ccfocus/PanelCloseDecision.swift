@@ -31,7 +31,7 @@ struct PanelCloseDecision {
         case .clickOutside:
             return PanelCloseDecision(
                 shouldClose: true,
-                shouldCommit: isPeekActive,
+                shouldCommit: false,
                 shouldRestoreFrontmost: false
             )
         case .attentionCleared:
