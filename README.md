@@ -35,6 +35,7 @@ The uninstall preflight removes ccfocus entries from `~/.claude/settings.json`. 
 
 - `Tab` / `Shift+Tab` (panel focused): Cycle peek through sessions. Ghostty window is raised behind the panel without activating it.
 - `Esc` / global hotkey: Close the panel. Commits the last peek (activates that Ghostty pane) if peeked, otherwise restores the previously active app.
+- `Return` (panel focused, while peeking): Commit the peeked pane and close the panel (same as `Esc` while peeking; no-op otherwise).
 - `1`–`9`, `0` (panel focused): Jump directly to the Nth session.
 - Mouse click on `Cycle sessions` row: Advance peek by one step.
 

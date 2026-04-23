@@ -112,6 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func togglePopover() {
         if panel.isVisible { closePanel(reason: .statusButtonToggle); return }
         showPanelUnfocused()
+        focusPanel()
     }
 
     private func handleHotkey() {
@@ -186,6 +187,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         guard panel.isKeyWindow else { return false }
         if event.keyCode == 53 {
+            closePanel(reason: .userEscape)
+            return true
+        }
+        if event.keyCode == 36 {
+            guard state.lastPeekedTerminalId != nil else { return false }
             closePanel(reason: .userEscape)
             return true
         }

@@ -1,6 +1,6 @@
 use crate::event::{Event, EventKind};
 use crate::git::CommandRunner;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use time::{Date, OffsetDateTime, UtcOffset};
 
@@ -13,10 +13,10 @@ struct Claim {
     claude_comm: String,
 }
 
-pub fn collect_live_claimed_terminal_ids(
+pub fn collect_live_claims(
     runner: &impl CommandRunner,
     dir: &Path,
-) -> HashSet<String> {
+) -> HashMap<(u32, String), String> {
     let dates = recent_dates();
     let mut latest: HashMap<(u32, String), Claim> = HashMap::new();
 
@@ -70,13 +70,13 @@ pub fn collect_live_claimed_terminal_ids(
         }
     }
 
-    let mut claimed = HashSet::new();
-    for claim in latest.values() {
-        if is_alive(runner, claim) {
-            claimed.insert(claim.terminal_id.clone());
+    let mut claims = HashMap::new();
+    for (key, claim) in latest {
+        if is_alive(runner, &claim) {
+            claims.insert(key, claim.terminal_id);
         }
     }
-    claimed
+    claims
 }
 
 fn is_alive(runner: &impl CommandRunner, claim: &Claim) -> bool {
@@ -165,14 +165,17 @@ mod tests {
     }
 
     #[test]
-    fn includes_terminal_when_ps_matches() {
+    fn returns_claim_when_ps_matches() {
         let tmp = TempDir::new().unwrap();
         let line = r#"{"ts":"2026-04-18T12:00:00.000Z","event":"session_start","session_id":"s1","terminal_id":"T1","cwd":"/foo","git_branch":null,"claude_pid":111,"claude_start_time":"Fri Apr 18 20:00:00 2026","claude_comm":"claude"}"#;
         write_today(tmp.path(), &format!("{line}\n"));
         let runner = PsRunner::new();
         runner.set("111", Ok("111 Fri Apr 18 20:00:00 2026 claude\n".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert_eq!(claimed, HashSet::from(["T1".to_string()]));
+        let claims = collect_live_claims(&runner, tmp.path());
+        let expected: HashMap<(u32, String), String> = HashMap::from([
+            ((111u32, "Fri Apr 18 20:00:00 2026".to_string()), "T1".to_string()),
+        ]);
+        assert_eq!(claims, expected);
     }
 
     #[test]
@@ -182,8 +185,8 @@ mod tests {
         write_today(tmp.path(), &format!("{line}\n"));
         let runner = PsRunner::new();
         runner.set("111", Ok("111 Sat Apr 18 21:00:00 2026 claude\n".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert!(claimed.is_empty());
+        let claims = collect_live_claims(&runner, tmp.path());
+        assert!(claims.is_empty());
     }
 
     #[test]
@@ -193,8 +196,8 @@ mod tests {
         write_today(tmp.path(), &format!("{line}\n"));
         let runner = PsRunner::new();
         runner.set("111", Err("no such process".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert!(claimed.is_empty());
+        let claims = collect_live_claims(&runner, tmp.path());
+        assert!(claims.is_empty());
     }
 
     #[test]
@@ -205,8 +208,11 @@ mod tests {
         write_today(tmp.path(), &format!("{older}\n{newer}\n"));
         let runner = PsRunner::new();
         runner.set("111", Ok("111 Fri Apr 18 20:00:00 2026 claude\n".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert_eq!(claimed, HashSet::from(["T_NEW".to_string()]));
+        let claims = collect_live_claims(&runner, tmp.path());
+        let expected: HashMap<(u32, String), String> = HashMap::from([
+            ((111u32, "Fri Apr 18 20:00:00 2026".to_string()), "T_NEW".to_string()),
+        ]);
+        assert_eq!(claims, expected);
     }
 
     #[test]
@@ -216,8 +222,8 @@ mod tests {
         write_today(tmp.path(), &format!("{line}\n"));
         let runner = PsRunner::new();
         runner.set("111", Ok("111 Fri Apr 18 20:00:00 2026 claude\n".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert!(claimed.is_empty());
+        let claims = collect_live_claims(&runner, tmp.path());
+        assert!(claims.is_empty());
     }
 
     #[test]
@@ -228,14 +234,17 @@ mod tests {
         write_today(tmp.path(), &format!("{garbage}\n{valid}\n"));
         let runner = PsRunner::new();
         runner.set("111", Ok("111 Fri Apr 18 20:00:00 2026 claude\n".into()));
-        let claimed = collect_live_claimed_terminal_ids(&runner, tmp.path());
-        assert_eq!(claimed, HashSet::from(["T1".to_string()]));
+        let claims = collect_live_claims(&runner, tmp.path());
+        let expected: HashMap<(u32, String), String> = HashMap::from([
+            ((111u32, "Fri Apr 18 20:00:00 2026".to_string()), "T1".to_string()),
+        ]);
+        assert_eq!(claims, expected);
     }
 
     #[test]
     fn returns_empty_when_dir_missing() {
         let runner = PsRunner::new();
-        let claimed = collect_live_claimed_terminal_ids(&runner, Path::new("/nonexistent/ccfocus/path"));
-        assert!(claimed.is_empty());
+        let claims = collect_live_claims(&runner, Path::new("/nonexistent/ccfocus/path"));
+        assert!(claims.is_empty());
     }
 }
