@@ -3,6 +3,7 @@ import SwiftUI
 
 final class KeyHandlingHostingView<Content: View>: NSHostingView<Content> {
     var onKeyDown: ((NSEvent) -> Bool)?
+    var onDidLayout: (() -> Void)?
     var wantsKeyboardFocus: Bool = false
 
     override var acceptsFirstResponder: Bool { wantsKeyboardFocus }
@@ -13,5 +14,10 @@ final class KeyHandlingHostingView<Content: View>: NSHostingView<Content> {
             return
         }
         super.keyDown(with: event)
+    }
+
+    override func layout() {
+        super.layout()
+        onDidLayout?()
     }
 }
