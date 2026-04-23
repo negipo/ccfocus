@@ -196,6 +196,10 @@ final class AppState: ObservableObject {
 
     func commitLastPeek() {
         guard let tid = lastPeekedTerminalId else { return }
+        if let sid = lastPeekedSessionId {
+            clearMessage(sid)
+            clearDoneNotified(sid)
+        }
         GhosttyFocus.focus(terminalId: tid)
     }
 

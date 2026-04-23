@@ -54,6 +54,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         hostingView = KeyHandlingHostingView(rootView: menuView)
         hostingView.onKeyDown = { [weak self] event in self?.handleKeyDown(event) ?? false }
+        hostingView.onDidLayout = { [weak self] in
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.applyContentSize(self.hostingView.fittingSize)
+            }
+        }
 
         let panelRect = NSRect(x: 0, y: 0, width: 340, height: 10)
         panel = KeyablePanel(contentRect: panelRect,
@@ -125,21 +131,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showPanelUnfocused() {
-        guard let button = statusItem.button, let window = button.window else { return }
+        guard let button = statusItem.button, let buttonWindow = button.window else { return }
         if panel.isVisible { return }
+        hostingView.layoutSubtreeIfNeeded()
         let fitting = hostingView.fittingSize
-        panel.setContentSize(fitting)
-        hostingView.frame = NSRect(origin: .zero, size: fitting)
-        let buttonRectOnScreen = window.convertToScreen(button.frame)
-        let origin = NSPoint(x: buttonRectOnScreen.midX - panel.frame.width / 2,
-                             y: buttonRectOnScreen.minY - panel.frame.height)
-        panel.setFrameOrigin(origin)
+        positionPanel(size: fitting, button: button, buttonWindow: buttonWindow)
         panel.orderFront(nil)
         hostingView.wantsKeyboardFocus = false
         state.capturePreviousFrontmostApp()
         stateMachine.markOpenedUnfocused()
         observeKeyWindowNotifications()
         installClickOutsideMonitorIfNeeded()
+    }
+
+    private func applyContentSize(_ size: CGSize) {
+        guard panel.isVisible else { return }
+        guard size.width > 0, size.height > 0 else { return }
+        guard let button = statusItem.button, let buttonWindow = button.window else { return }
+        positionPanel(size: size, button: button, buttonWindow: buttonWindow)
+    }
+
+    private func positionPanel(size: CGSize, button: NSStatusBarButton, buttonWindow: NSWindow) {
+        panel.setContentSize(size)
+        hostingView.frame = NSRect(origin: .zero, size: size)
+        let buttonRectOnScreen = buttonWindow.convertToScreen(button.frame)
+        let origin = NSPoint(x: buttonRectOnScreen.midX - panel.frame.width / 2,
+                             y: buttonRectOnScreen.minY - panel.frame.height)
+        panel.setFrameOrigin(origin)
     }
 
     private func installClickOutsideMonitorIfNeeded() {
