@@ -96,15 +96,15 @@ enum GhosttyFocus {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         proc.arguments = ["-e", script]
-        try? proc.run()
+        do { try proc.run() } catch { return }
         proc.waitUntilExit()
 
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.mitchellh.ghostty").first else { return }
         let axApp = AXUIElementCreateApplication(app.processIdentifier)
         var value: CFTypeRef?
         let err = AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &value)
-        guard err == .success, CFGetTypeID(value) == AXUIElementGetTypeID() else { return }
-        let window = value as! AXUIElement
+        guard err == .success, let rawValue = value, CFGetTypeID(rawValue) == AXUIElementGetTypeID() else { return }
+        let window = rawValue as! AXUIElement
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
     }
 }
