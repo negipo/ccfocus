@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.onOpenPopover = { [weak self] in self?.showPanelUnfocused() }
         state.onClosePopover = { [weak self] in
             guard let self else { return }
-            self.panel.close()
+            self.closePanel(reason: .attentionCleared)
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -42,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let menuView = MenuBarView(
             state: state,
-            onDismiss: { [weak self] in self?.panel.close() },
+            onDismiss: { [weak self] in self?.closePanel(reason: .committedViaRow) },
             onOpenSettings: { [weak self] in self?.settingsWindowController.show() }
         )
         let hostingView = KeyHandlingHostingView(rootView: menuView)
@@ -89,13 +89,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func togglePopover() {
-        if panel.isVisible { panel.close(); return }
+        if panel.isVisible { closePanel(reason: .statusButtonToggle); return }
         showPanelUnfocused()
     }
 
     private func handleHotkey() {
         if panel.isVisible {
-            if panel.isKeyWindow { panel.close() } else { focusPanel() }
+            if panel.isKeyWindow { closePanel(reason: .userHotkey) } else { focusPanel() }
         } else {
             showPanelUnfocused()
             focusPanel()
@@ -130,7 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         guard panel.isKeyWindow else { return false }
         if event.keyCode == 53 {
-            panel.close()
+            closePanel(reason: .userEscape)
             return true
         }
         guard let chars = event.charactersIgnoringModifiers, let character = chars.first,
@@ -143,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.clearDoneNotified(entry.sessionId)
         if let id = state.effectiveTerminalId(for: entry) {
             GhosttyFocus.focus(terminalId: id)
-            panel.close()
+            closePanel(reason: .committedViaNumberKey)
         }
         return true
     }
@@ -167,6 +167,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         keyObservers = [becameKey, resignedKey, willClose]
+    }
+
+    func closePanel(reason: PanelCloseReason) {
+        let isFrontmost = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == Bundle.main.bundleIdentifier
+        let decision = PanelCloseDecision.decide(
+            reason: reason,
+            isPeekActive: state.lastPeekedTerminalId != nil,
+            isCcfocusFrontmost: isFrontmost
+        )
+        guard decision.shouldClose else { return }
+        if decision.shouldCommit { state.commitLastPeek() }
+        if decision.shouldRestoreFrontmost { state.restorePreviousFrontmostApp() }
+        state.resetCycleState()
+        panel.close()
     }
 
     private func registerLoginItemIfNeeded() {
