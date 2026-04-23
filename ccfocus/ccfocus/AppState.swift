@@ -1,12 +1,16 @@
+import AppKit
 import Foundation
 import SwiftUI
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published private(set) var registry = SessionRegistry()
+    @Published var registry = SessionRegistry()
     @Published private(set) var pairings = ManualPairingsStore(fileURL: ManualPairingsStore.defaultURL())
     @Published var manualPairingSession: SessionEntry?
     @Published private(set) var cachedTerminals: [GhosttyTerminalInfo] = []
+    @Published var lastPeekedSessionId: String?
+    @Published var lastPeekedTerminalId: String?
+    var previousFrontmostApp: NSRunningApplication?
     private let reader = LogTail.Reader()
     private var watcher: LogTail.Watcher?
     private var livenessTimer: Timer?
@@ -156,5 +160,28 @@ final class AppState: ObservableObject {
         }
         objectWillChange.send()
         checkAutoClose()
+    }
+
+    func cycleSessionsOneStep(forward: Bool) -> SessionEntry? {
+        let all = registry.sortedByLastEventDesc().filter { $0.status != .deceased }
+        let candidates = all.filter { effectiveTerminalId(for: $0) != nil }
+        guard !candidates.isEmpty else { return nil }
+        let startIndex: Int
+        if let sid = lastPeekedSessionId, let idx = candidates.firstIndex(where: { $0.sessionId == sid }) {
+            startIndex = forward ? (idx + 1) % candidates.count
+                                 : (idx - 1 + candidates.count) % candidates.count
+        } else {
+            startIndex = forward ? 0 : candidates.count - 1
+        }
+        let target = candidates[startIndex]
+        lastPeekedSessionId = target.sessionId
+        lastPeekedTerminalId = effectiveTerminalId(for: target)
+        return target
+    }
+
+    func resetCycleState() {
+        lastPeekedSessionId = nil
+        lastPeekedTerminalId = nil
+        previousFrontmostApp = nil
     }
 }
