@@ -189,6 +189,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             closePanel(reason: .userEscape)
             return true
         }
+        if event.keyCode == 36 {
+            guard state.lastPeekedTerminalId != nil else { return false }
+            closePanel(reason: .userEscape)
+            return true
+        }
         if event.keyCode == 48 {
             let forward = !event.modifierFlags.contains(.shift)
             peekOneStep(forward: forward)
