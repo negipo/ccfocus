@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkeyController = HotkeyController()
     private let settingsWindowController = SettingsWindowController()
     private var keyObservers: [NSObjectProtocol] = []
+    private var clickOutsideMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerLoginItemIfNeeded()
@@ -116,6 +117,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.capturePreviousFrontmostApp()
         stateMachine.markOpenedUnfocused()
         observeKeyWindowNotifications()
+        installClickOutsideMonitorIfNeeded()
+    }
+
+    private func installClickOutsideMonitorIfNeeded() {
+        guard clickOutsideMonitor == nil else { return }
+        clickOutsideMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                guard self.panel.isVisible else { return }
+                self.closePanel(reason: .clickOutside)
+            }
+        }
+    }
+
+    private func removeClickOutsideMonitor() {
+        if let monitor = clickOutsideMonitor {
+            NSEvent.removeMonitor(monitor)
+            clickOutsideMonitor = nil
+        }
     }
 
     private func focusPanel() {
@@ -181,6 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if decision.shouldRestoreFrontmost { state.restorePreviousFrontmostApp() }
         state.resetCycleState()
         panel.close()
+        removeClickOutsideMonitor()
     }
 
     private func registerLoginItemIfNeeded() {
