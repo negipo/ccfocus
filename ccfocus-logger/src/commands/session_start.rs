@@ -2,12 +2,11 @@ use crate::event::{Event, EventKind};
 use crate::ghostty::find_terminal_id_with_retry;
 use crate::git::{git_branch, RealRunner};
 use crate::log_path::{events_dir, log_file_for_now};
-use crate::log_reader::collect_live_claimed_terminal_ids;
+use crate::log_reader::collect_live_claims;
 use crate::log_writer::append_event_to;
 use crate::timestamp::now_iso8601;
 use anyhow::Result;
 use serde::Deserialize;
-use std::collections::HashSet;
 use std::io::Read;
 use std::time::Duration;
 
@@ -23,10 +22,11 @@ pub fn run() -> Result<()> {
     let payload: HookPayload = serde_json::from_str(&buf)?;
 
     let runner = RealRunner;
-    let claimed = match events_dir() {
-        Ok(dir) => collect_live_claimed_terminal_ids(&runner, &dir),
-        Err(_) => HashSet::new(),
+    let claims = match events_dir() {
+        Ok(dir) => collect_live_claims(&runner, &dir),
+        Err(_) => std::collections::HashMap::new(),
     };
+    let claimed: std::collections::HashSet<String> = claims.values().cloned().collect();
     let terminal_id = find_terminal_id_with_retry(
         &runner,
         &payload.cwd,
