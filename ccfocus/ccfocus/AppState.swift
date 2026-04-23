@@ -184,4 +184,23 @@ final class AppState: ObservableObject {
         lastPeekedTerminalId = nil
         previousFrontmostApp = nil
     }
+
+    func capturePreviousFrontmostApp() {
+        if let app = NSWorkspace.shared.frontmostApplication,
+           app.bundleIdentifier != Bundle.main.bundleIdentifier {
+            previousFrontmostApp = app
+        } else {
+            previousFrontmostApp = nil
+        }
+    }
+
+    func commitLastPeek() {
+        guard let tid = lastPeekedTerminalId else { return }
+        GhosttyFocus.focus(terminalId: tid)
+    }
+
+    func restorePreviousFrontmostApp() {
+        guard let app = previousFrontmostApp else { return }
+        app.activate(options: [])
+    }
 }
