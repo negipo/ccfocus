@@ -15,7 +15,10 @@ struct PanelCloseDecision {
     let shouldCommit: Bool
     let shouldRestoreFrontmost: Bool
 
-    static func decide(reason: PanelCloseReason, isPeekActive: Bool, isCcfocusFrontmost: Bool) -> PanelCloseDecision {
+    static func decide(reason: PanelCloseReason, isPeekActive: Bool, isCcfocusFrontmost: Bool, panelUserOwned: Bool) -> PanelCloseDecision {
+        if reason == .attentionCleared && panelUserOwned {
+            return PanelCloseDecision(shouldClose: false, shouldCommit: false, shouldRestoreFrontmost: false)
+        }
         if reason == .attentionCleared && isPeekActive {
             return PanelCloseDecision(shouldClose: false, shouldCommit: false, shouldRestoreFrontmost: false)
         }
