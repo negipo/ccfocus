@@ -44,7 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menuView = MenuBarView(
             state: state,
             onDismiss: { [weak self] in self?.closePanel(reason: .committedViaRow) },
-            onOpenSettings: { [weak self] in self?.settingsWindowController.show() }
+            onOpenSettings: { [weak self] in self?.settingsWindowController.show() },
+            onCycleOneStep: { [weak self] in self?.peekOneStep(forward: true) }
         )
         let hostingView = KeyHandlingHostingView(rootView: menuView)
         hostingView.onKeyDown = { [weak self] event in self?.handleKeyDown(event) ?? false }
