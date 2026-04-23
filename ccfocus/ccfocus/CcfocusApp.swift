@@ -147,10 +147,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func peekOneStep(forward: Bool) {
+        guard state.cycleSessionsOneStep(forward: forward) != nil,
+              let tid = state.lastPeekedTerminalId else { return }
+        GhosttyFocus.peek(terminalId: tid)
+        DispatchQueue.main.async { [weak self] in self?.panel.orderFront(nil) }
+    }
+
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         guard panel.isKeyWindow else { return false }
         if event.keyCode == 53 {
             closePanel(reason: .userEscape)
+            return true
+        }
+        if event.keyCode == 48 {
+            let forward = !event.modifierFlags.contains(.shift)
+            peekOneStep(forward: forward)
             return true
         }
         guard let chars = event.charactersIgnoringModifiers, let character = chars.first,
