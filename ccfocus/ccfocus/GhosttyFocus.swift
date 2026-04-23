@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import ApplicationServices
 
 struct GhosttyTerminalInfo: Identifiable {
     let id: String
@@ -74,5 +76,35 @@ enum GhosttyFocus {
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         proc.arguments = ["-e", source]
         try? proc.run()
+    }
+
+    static func peek(terminalId: String) {
+        let script = """
+        tell application "Ghostty"
+            repeat with w in windows
+                repeat with t in tabs of w
+                    repeat with term in terminals of t
+                        if (id of term) is "\(terminalId)" then
+                            focus term
+                            return
+                        end if
+                    end repeat
+                end repeat
+            end repeat
+        end tell
+        """
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", script]
+        do { try proc.run() } catch { return }
+        proc.waitUntilExit()
+
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.mitchellh.ghostty").first else { return }
+        let axApp = AXUIElementCreateApplication(app.processIdentifier)
+        var value: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &value)
+        guard err == .success, let rawValue = value, CFGetTypeID(rawValue) == AXUIElementGetTypeID() else { return }
+        let window = rawValue as! AXUIElement
+        AXUIElementPerformAction(window, kAXRaiseAction as CFString)
     }
 }

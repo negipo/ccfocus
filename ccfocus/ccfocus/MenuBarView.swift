@@ -4,6 +4,7 @@ struct MenuBarView: View {
     @ObservedObject var state: AppState
     var onDismiss: () -> Void = {}
     var onOpenSettings: () -> Void = {}
+    var onCycleOneStep: () -> Void = {}
     @State private var showDeceased = false
 
     private var activeSessions: [SessionEntry] {
@@ -61,6 +62,16 @@ struct MenuBarView: View {
             Divider()
             HStack {
                 Color.clear.frame(width: 10, height: 10)
+                Text("Cycle sessions").foregroundStyle(.secondary)
+                Spacer()
+                Text("Tab").font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+            }
+            .padding(4)
+            .contentShape(Rectangle())
+            .onTapGesture { onCycleOneStep() }
+            Divider()
+            HStack {
+                Color.clear.frame(width: 10, height: 10)
                 Text("Settings").foregroundStyle(.secondary)
                 Spacer()
                 Text("⌘,").font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
@@ -98,6 +109,10 @@ struct MenuBarView: View {
         return idx == 9 ? "0" : String(idx + 1)
     }
 
+    private func isPeeked(_ session: SessionEntry) -> Bool {
+        state.lastPeekedSessionId == session.sessionId
+    }
+
     private func row(_ session: SessionEntry, numberHint: String?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             rowHeader(session, numberHint: numberHint)
@@ -105,6 +120,10 @@ struct MenuBarView: View {
         }
         .padding(4)
         .background(backgroundColor(for: session))
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(isPeeked(session) ? Color.accentColor : Color.clear, lineWidth: 1.5)
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             state.clearMessage(session.sessionId)
