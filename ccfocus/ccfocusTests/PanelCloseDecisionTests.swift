@@ -3,70 +3,84 @@ import XCTest
 
 final class PanelCloseDecisionTests: XCTestCase {
     func testAttentionClearedDuringPeekSuppressesClose() {
-        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: true, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: true, isCcfocusFrontmost: true, panelUserOwned: false)
         XCTAssertFalse(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
     func testAttentionClearedNoPeekAndCcfocusFrontmostRestores() {
-        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: false, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: false)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertTrue(d.shouldRestoreFrontmost)
     }
 
     func testAttentionClearedNoPeekAndCcfocusNotFrontmostDoesNotRestore() {
-        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: false, isCcfocusFrontmost: false)
+        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: false, isCcfocusFrontmost: false, panelUserOwned: false)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
+    func testAttentionClearedWhenUserOwnedSuppressesClose() {
+        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: true)
+        XCTAssertFalse(d.shouldClose)
+        XCTAssertFalse(d.shouldCommit)
+        XCTAssertFalse(d.shouldRestoreFrontmost)
+    }
+
+    func testAttentionClearedWhenUserOwnedAndPeekActiveSuppressesClose() {
+        let d = PanelCloseDecision.decide(reason: .attentionCleared, isPeekActive: true, isCcfocusFrontmost: true, panelUserOwned: true)
+        XCTAssertFalse(d.shouldClose)
+        XCTAssertFalse(d.shouldCommit)
+        XCTAssertFalse(d.shouldRestoreFrontmost)
+    }
+
     func testUserEscapeWithPeekCommits() {
-        let d = PanelCloseDecision.decide(reason: .userEscape, isPeekActive: true, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .userEscape, isPeekActive: true, isCcfocusFrontmost: true, panelUserOwned: true)
         XCTAssertTrue(d.shouldClose)
         XCTAssertTrue(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
     func testUserEscapeNoPeekAndCcfocusFrontmostRestores() {
-        let d = PanelCloseDecision.decide(reason: .userEscape, isPeekActive: false, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .userEscape, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: true)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertTrue(d.shouldRestoreFrontmost)
     }
 
     func testUserHotkeyNoPeekAndCcfocusFrontmostRestores() {
-        let d = PanelCloseDecision.decide(reason: .userHotkey, isPeekActive: false, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .userHotkey, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: true)
         XCTAssertTrue(d.shouldClose)
         XCTAssertTrue(d.shouldRestoreFrontmost)
     }
 
     func testCommittedViaRowNeverRestores() {
-        let d = PanelCloseDecision.decide(reason: .committedViaRow, isPeekActive: false, isCcfocusFrontmost: true)
+        let d = PanelCloseDecision.decide(reason: .committedViaRow, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: false)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
     func testClickOutsideWithPeekDoesNotCommit() {
-        let d = PanelCloseDecision.decide(reason: .clickOutside, isPeekActive: true, isCcfocusFrontmost: false)
+        let d = PanelCloseDecision.decide(reason: .clickOutside, isPeekActive: true, isCcfocusFrontmost: false, panelUserOwned: true)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldCommit)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
     func testClickOutsideNoPeekNeverRestores() {
-        let d = PanelCloseDecision.decide(reason: .clickOutside, isPeekActive: false, isCcfocusFrontmost: false)
+        let d = PanelCloseDecision.decide(reason: .clickOutside, isPeekActive: false, isCcfocusFrontmost: false, panelUserOwned: false)
         XCTAssertTrue(d.shouldClose)
         XCTAssertFalse(d.shouldRestoreFrontmost)
     }
 
     func testStatusButtonToggleBehavesLikeUserEscape() {
         XCTAssertEqual(
-            PanelCloseDecision.decide(reason: .statusButtonToggle, isPeekActive: false, isCcfocusFrontmost: true).shouldRestoreFrontmost,
-            PanelCloseDecision.decide(reason: .userEscape, isPeekActive: false, isCcfocusFrontmost: true).shouldRestoreFrontmost
+            PanelCloseDecision.decide(reason: .statusButtonToggle, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: true).shouldRestoreFrontmost,
+            PanelCloseDecision.decide(reason: .userEscape, isPeekActive: false, isCcfocusFrontmost: true, panelUserOwned: true).shouldRestoreFrontmost
         )
     }
 }

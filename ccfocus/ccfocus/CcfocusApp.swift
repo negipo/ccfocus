@@ -26,11 +26,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsWindowController = SettingsWindowController()
     private var keyObservers: [NSObjectProtocol] = []
     private var clickOutsideMonitor: Any?
+    private var panelUserOwned: Bool = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerLoginItemIfNeeded()
         state.bootstrap()
-        state.onOpenPopover = { [weak self] in self?.showPanelUnfocused() }
+        state.onOpenPopover = { [weak self] in self?.showPanelUnfocused(automatic: true) }
         state.onClosePopover = { [weak self] in
             guard let self else { return }
             self.closePanel(reason: .attentionCleared)
@@ -117,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func togglePopover() {
         if panel.isVisible { closePanel(reason: .statusButtonToggle); return }
-        showPanelUnfocused()
+        showPanelUnfocused(automatic: false)
         focusPanel()
     }
 
@@ -125,12 +126,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if panel.isVisible {
             if panel.isKeyWindow { closePanel(reason: .userHotkey) } else { focusPanel() }
         } else {
-            showPanelUnfocused()
+            showPanelUnfocused(automatic: false)
             focusPanel()
         }
     }
 
-    private func showPanelUnfocused() {
+    private func showPanelUnfocused(automatic: Bool) {
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
         if panel.isVisible { return }
         hostingView.layoutSubtreeIfNeeded()
@@ -140,6 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hostingView.wantsKeyboardFocus = false
         state.capturePreviousFrontmostApp()
         stateMachine.markOpenedUnfocused()
+        panelUserOwned = !automatic
         observeKeyWindowNotifications()
         installClickOutsideMonitorIfNeeded()
     }
@@ -238,7 +240,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keyObservers.removeAll()
         let center = NotificationCenter.default
         let becameKey = center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: panel, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.stateMachine.markBecameKey() }
+            Task { @MainActor in
+                self?.stateMachine.markBecameKey()
+                self?.panelUserOwned = true
+            }
         }
         let resignedKey = center.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.stateMachine.markResignedKey() }
@@ -257,13 +262,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let decision = PanelCloseDecision.decide(
             reason: reason,
             isPeekActive: state.lastPeekedTerminalId != nil,
-            isCcfocusFrontmost: isFrontmost
+            isCcfocusFrontmost: isFrontmost,
+            panelUserOwned: panelUserOwned
         )
         guard decision.shouldClose else { return }
         if decision.shouldCommit { state.commitLastPeek() }
         if decision.shouldRestoreFrontmost { state.restorePreviousFrontmostApp() }
         state.resetCycleState()
         panel.close()
+        panelUserOwned = false
         removeClickOutsideMonitor()
     }
 
