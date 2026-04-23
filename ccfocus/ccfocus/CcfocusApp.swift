@@ -11,10 +11,15 @@ struct CcfocusApp: App {
     }
 }
 
+final class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panel: NSPanel!
+    private var hostingView: KeyHandlingHostingView<MenuBarView>!
     private let state = AppState()
     private var stateMachine = PopoverStateMachine()
     private let hotkeyController = HotkeyController()
@@ -47,20 +52,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onOpenSettings: { [weak self] in self?.settingsWindowController.show() },
             onCycleOneStep: { [weak self] in self?.peekOneStep(forward: true) }
         )
-        let hostingView = KeyHandlingHostingView(rootView: menuView)
+        hostingView = KeyHandlingHostingView(rootView: menuView)
         hostingView.onKeyDown = { [weak self] event in self?.handleKeyDown(event) ?? false }
 
         let panelRect = NSRect(x: 0, y: 0, width: 340, height: 10)
-        panel = NSPanel(contentRect: panelRect,
-                        styleMask: [.borderless, .nonactivatingPanel],
-                        backing: .buffered, defer: false)
+        panel = KeyablePanel(contentRect: panelRect,
+                             styleMask: [.borderless, .nonactivatingPanel],
+                             backing: .buffered, defer: false)
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = false
         panel.level = .statusBar
         panel.hasShadow = true
         panel.isMovable = false
-        panel.contentView = hostingView
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+
+        let effectView = NSVisualEffectView()
+        effectView.material = .menu
+        effectView.blendingMode = .behindWindow
+        effectView.state = .active
+        effectView.wantsLayer = true
+        effectView.layer?.cornerRadius = 8
+        effectView.layer?.masksToBounds = true
+        effectView.autoresizingMask = [.width, .height]
+        hostingView.autoresizingMask = [.width, .height]
+        hostingView.frame = effectView.bounds
+        effectView.addSubview(hostingView)
+        panel.contentView = effectView
 
         hotkeyController.onToggleFocus = { [weak self] in self?.handleHotkey() }
         hotkeyController.start()
@@ -107,14 +126,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPanelUnfocused() {
         guard let button = statusItem.button, let window = button.window else { return }
         if panel.isVisible { return }
+        let fitting = hostingView.fittingSize
+        panel.setContentSize(fitting)
+        hostingView.frame = NSRect(origin: .zero, size: fitting)
         let buttonRectOnScreen = window.convertToScreen(button.frame)
         let origin = NSPoint(x: buttonRectOnScreen.midX - panel.frame.width / 2,
                              y: buttonRectOnScreen.minY - panel.frame.height)
         panel.setFrameOrigin(origin)
         panel.orderFront(nil)
-        if let host = panel.contentView as? KeyHandlingHostingView<MenuBarView> {
-            host.wantsKeyboardFocus = false
-        }
+        hostingView.wantsKeyboardFocus = false
         state.capturePreviousFrontmostApp()
         stateMachine.markOpenedUnfocused()
         observeKeyWindowNotifications()
@@ -141,10 +161,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func focusPanel() {
         NSApp.activate(ignoringOtherApps: true)
-        if let host = panel.contentView as? KeyHandlingHostingView<MenuBarView> {
-            host.wantsKeyboardFocus = true
-            panel.makeKeyAndOrderFront(nil)
-            panel.makeFirstResponder(host)
+        hostingView.wantsKeyboardFocus = true
+        let host = hostingView!
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.panel.makeKeyAndOrderFront(nil)
+            self.panel.makeFirstResponder(host)
         }
     }
 
@@ -152,7 +174,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard state.cycleSessionsOneStep(forward: forward) != nil,
               let tid = state.lastPeekedTerminalId else { return }
         GhosttyFocus.peek(terminalId: tid)
-        DispatchQueue.main.async { [weak self] in self?.panel.orderFront(nil) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self else { return }
+            NSApp.activate(ignoringOtherApps: true)
+            self.hostingView.wantsKeyboardFocus = true
+            self.panel.makeKeyAndOrderFront(nil)
+            self.panel.makeFirstResponder(self.hostingView)
+        }
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
@@ -194,9 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let willClose = center.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [weak self] _ in
             Task { @MainActor in
                 self?.stateMachine.markDidClose()
-                if let host = self?.panel.contentView as? KeyHandlingHostingView<MenuBarView> {
-                    host.wantsKeyboardFocus = false
-                }
+                self?.hostingView.wantsKeyboardFocus = false
             }
         }
         keyObservers = [becameKey, resignedKey, willClose]
