@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = AppState()
     private var stateMachine = PopoverStateMachine()
     private let hotkeyController = HotkeyController()
+    private let globalCycleController = GlobalCycleController()
+    private let cycleHUDController = CycleHUDController()
     private let settingsWindowController = SettingsWindowController()
     private var keyObservers: [NSObjectProtocol] = []
     private var clickOutsideMonitor: Any?
@@ -88,7 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         effectView.addSubview(hostingView)
         panel.contentView = effectView
 
+        cycleHUDController.prepare()
         hotkeyController.onToggleFocus = { [weak self] in self?.handleHotkey() }
+        hotkeyController.onCycleNext = { [weak self] in self?.handleGlobalCycle() }
         hotkeyController.start()
 
         setupMainMenu()
@@ -129,6 +133,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             showPanelUnfocused(automatic: false)
             focusPanel()
         }
+    }
+
+    private func handleGlobalCycle() {
+        guard let entry = globalCycleController.cycleNext(state: state) else { return }
+        cycleHUDController.show(session: entry)
     }
 
     private func showPanelUnfocused(automatic: Bool) {

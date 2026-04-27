@@ -137,7 +137,7 @@ struct MenuBarView: View {
 
     private func rowHeader(_ session: SessionEntry, numberHint: String?) -> some View {
         HStack {
-            Circle().fill(color(for: session.status)).frame(width: 10, height: 10)
+            Circle().fill(session.status.displayColor).frame(width: 10, height: 10)
             if isUnlinked(session) {
                 Image(systemName: "link.badge.plus")
                     .font(.caption2)
@@ -184,19 +184,6 @@ struct MenuBarView: View {
         if session.status == .done && session.doneNotified { return Color.gray.opacity(0.1) }
         if session.status == .idle { return Color.gray.opacity(0.1) }
         return Color.clear
-    }
-
-    private func color(for status: SessionStatus) -> Color {
-        switch status {
-        case .idle: return .gray
-        case .running: return .green
-        case .asking: return .orange
-        case .waitingInput: return .orange
-        case .done: return .gray
-        case .error: return .red
-        case .stale: return Color.gray.opacity(0.4)
-        case .deceased: return Color.gray.opacity(0.2)
-        }
     }
 
     private func relativeAge(_ timestamp: String) -> String {
