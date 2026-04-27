@@ -15,6 +15,11 @@ struct SettingsView: View {
                 Spacer()
                 KeyboardShortcuts.Recorder(for: .toggleFocus)
             }
+            HStack {
+                Text("Cycle to next session:")
+                Spacer()
+                KeyboardShortcuts.Recorder(for: .cycleNext)
+            }
             Divider()
             Text("Accessibility")
                 .font(.headline)
@@ -34,7 +39,7 @@ struct SettingsView: View {
             Spacer(minLength: 0)
         }
         .padding(20)
-        .frame(width: 420, height: 220, alignment: .topLeading)
+        .frame(width: 420, height: 260, alignment: .topLeading)
     }
 
     private func promptAndOpenAccessibilitySettings() {
