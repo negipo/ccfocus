@@ -5,4 +5,5 @@ extension KeyboardShortcuts.Name {
         "toggleFocus",
         default: .init(.f, modifiers: [.command, .option])
     )
+    static let cycleNext = Self("cycleNext")
 }
