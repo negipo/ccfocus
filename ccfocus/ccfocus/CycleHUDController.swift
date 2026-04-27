@@ -100,7 +100,7 @@ final class CycleHUDController {
             ctx.duration = fadeDuration
             panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in
-            self?.panel?.orderOut(nil)
+            Task { @MainActor in self?.panel?.orderOut(nil) }
         }
     }
 }
