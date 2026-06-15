@@ -1,5 +1,4 @@
 import AppKit
-import ServiceManagement
 import SwiftUI
 
 @main
@@ -31,7 +30,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelUserOwned: Bool = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        registerLoginItemIfNeeded()
         state.bootstrap()
         state.onOpenPopover = { [weak self] in self?.showPanelUnfocused(automatic: true) }
         state.onClosePopover = { [weak self] in
@@ -281,15 +279,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.close()
         panelUserOwned = false
         removeClickOutsideMonitor()
-    }
-
-    private func registerLoginItemIfNeeded() {
-        let key = "loginItemRegistered"
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
-        let service = SMAppService.mainApp
-        if service.status != .enabled {
-            try? service.register()
-        }
-        UserDefaults.standard.set(true, forKey: key)
     }
 }
